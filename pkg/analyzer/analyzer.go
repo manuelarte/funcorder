@@ -22,11 +22,14 @@ func NewAnalyzer() *analysis.Analyzer {
 }
 
 func run(pass *analysis.Pass) (interface{}, error) {
+	np := NewNodeProcessor()
+
 	var lastFuncName string
 
 	for _, file := range pass.Files {
 		ast.Inspect(file, func(n ast.Node) bool {
 			fmt.Printf("%+v\n", reflect.TypeOf(n))
+			continueChild, _ := np.Process(n)
 			if fn, ok := n.(*ast.FuncDecl); ok {
 				funcName := fn.Name.Name
 
@@ -36,8 +39,9 @@ func run(pass *analysis.Pass) (interface{}, error) {
 				}
 
 				lastFuncName = funcName
+				return false
 			}
-			return true
+			return continueChild
 		})
 	}
 	//nolint:nilnil //interface{}, error
