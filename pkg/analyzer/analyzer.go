@@ -2,9 +2,7 @@ package analyzer
 
 import (
 	"flag"
-	"fmt"
 	"go/ast"
-	"reflect"
 
 	"golang.org/x/tools/go/analysis"
 )
@@ -24,25 +22,21 @@ func NewAnalyzer() *analysis.Analyzer {
 func run(pass *analysis.Pass) (interface{}, error) {
 	np := NewNodeProcessor()
 
-	var lastFuncName string
-
 	for _, file := range pass.Files {
 		ast.Inspect(file, func(n ast.Node) bool {
-			fmt.Printf("%+v\n", reflect.TypeOf(n))
-			continueChild, _ := np.Process(n)
-			if fn, ok := n.(*ast.FuncDecl); ok {
-				funcName := fn.Name.Name
-
-				// check for ordering rule
-				if lastFuncName != "" && funcName < lastFuncName {
-					pass.Reportf(fn.Pos(), "functions %q appears before %q but should be ordered differently", funcName, lastFuncName)
+			continueChild := np.Process(n)
+			if _, ok := n.(*ast.File); ok {
+				errs := np.Analyze()
+				for _, err := range errs {
+					pass.Report(analysis.Diagnostic{Pos: err.GetPos(), Message: err.Error()})
 				}
-
-				lastFuncName = funcName
-				return false
 			}
 			return continueChild
 		})
+	}
+	errs := np.Analyze()
+	for _, err := range errs {
+		pass.Report(analysis.Diagnostic{Pos: err.GetPos(), Message: err.Error()})
 	}
 	//nolint:nilnil //interface{}, error
 	return nil, nil

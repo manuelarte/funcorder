@@ -11,7 +11,7 @@ tidy: ## Run go mod tidy in all directories
 
 t: test
 test: ## Run unit tests, alias: t
-	go test --cover -timeout=300s -parallel=16 ${TEST_DIRECTORIES}
+	go test --cover -timeout=300s -parallel=16 ./...
 .PHONY: t test
 
 fmt: format-code
