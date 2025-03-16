@@ -1,11 +1,11 @@
 package simple
 
-func NewOtherMyStruct() (m *MyStruct) {
+func NewOtherMyStruct() (m *MyStruct) { // want "should be placed after the struct declaration"
 	m = &MyStruct{Name: "John"}
 	return
 }
 
-func NewMyStruct() *MyStruct {
+func NewMyStruct() *MyStruct { // want "should be placed after the struct declaration"
 	return &MyStruct{Name: "John"}
 }
 
