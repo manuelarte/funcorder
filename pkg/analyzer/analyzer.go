@@ -36,6 +36,10 @@ func run(pass *analysis.Pass) (interface{}, error) {
 			return continueChild
 		})
 	}
+	errs := fp.Analyze()
+	for _, err := range errs {
+		pass.Report(analysis.Diagnostic{Pos: err.GetPos(), Message: err.Error()})
+	}
 	//nolint:nilnil //interface{}, error
 	return nil, nil
 }
