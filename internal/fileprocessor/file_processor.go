@@ -51,9 +51,10 @@ func (fp *FileProcessor) Analyze() []errors.LinterError {
 }
 
 func (fp *FileProcessor) addConstructor(sc models.StructConstructor) {
-	structReturn, _ := sc.GetStructReturn()
-	sh := fp.getOrCreate(structReturn.Name)
-	sh.AddConstructor(sc.GetConstructor())
+	if structReturn, ok := sc.GetStructReturn(); ok {
+		sh := fp.getOrCreate(structReturn.Name)
+		sh.AddConstructor(sc.GetConstructor())
+	}
 }
 
 func (fp *FileProcessor) addMethod(st string, n *ast.FuncDecl) {
