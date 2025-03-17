@@ -3,7 +3,7 @@ package models
 import (
 	"go/ast"
 
-	"github.com/manuelarte/gofuncor/pkg/errors"
+	"github.com/manuelarte/gofuncor/internal/errors"
 )
 
 // StructHolder contains all the information around a Go struct.

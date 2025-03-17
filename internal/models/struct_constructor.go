@@ -7,21 +7,26 @@ import (
 )
 
 type StructConstructor struct {
-	Func *ast.FuncDecl
+	constructor *ast.FuncDecl
 }
 
 func NewStructConstructor(funcDec *ast.FuncDecl) (StructConstructor, bool) {
 	if utils.FuncNameCanBeConstructor(funcDec) {
 		return StructConstructor{
-			Func: funcDec,
+			constructor: funcDec,
 		}, true
 	}
 	return StructConstructor{}, false
 }
 
+// GetStructReturn Return the struct linked to this "constructor".
 func (sc StructConstructor) GetStructReturn() (*ast.Ident, bool) {
-	expr := sc.Func.Type.Results.List[0].Type
+	expr := sc.constructor.Type.Results.List[0].Type
 	return sc.returnType(expr)
+}
+
+func (sc StructConstructor) GetConstructor() *ast.FuncDecl {
+	return sc.constructor
 }
 
 func (sc StructConstructor) returnType(expr ast.Expr) (*ast.Ident, bool) {

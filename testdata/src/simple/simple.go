@@ -1,5 +1,6 @@
 package simple
 
+//nolint:nonamedreturns // testing linter
 func NewOtherMyStruct() (m *MyStruct) { // want "should be placed after the struct declaration"
 	m = &MyStruct{Name: "John"}
 	return

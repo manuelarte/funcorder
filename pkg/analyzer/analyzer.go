@@ -2,6 +2,7 @@ package analyzer
 
 import (
 	"flag"
+	"github.com/manuelarte/gofuncor/internal/fileprocessor"
 	"go/ast"
 
 	"golang.org/x/tools/go/analysis"
@@ -20,23 +21,19 @@ func NewAnalyzer() *analysis.Analyzer {
 }
 
 func run(pass *analysis.Pass) (interface{}, error) {
-	np := NewNodeProcessor()
+	fp := fileprocessor.NewFileProcessor()
 
 	for _, file := range pass.Files {
 		ast.Inspect(file, func(n ast.Node) bool {
-			continueChild := np.Process(n)
 			if _, ok := n.(*ast.File); ok {
-				errs := np.Analyze()
+				errs := fp.Analyze()
 				for _, err := range errs {
 					pass.Report(analysis.Diagnostic{Pos: err.GetPos(), Message: err.Error()})
 				}
 			}
+			continueChild := fp.Process(n)
 			return continueChild
 		})
-	}
-	errs := np.Analyze()
-	for _, err := range errs {
-		pass.Report(analysis.Diagnostic{Pos: err.GetPos(), Message: err.Error()})
 	}
 	//nolint:nilnil //interface{}, error
 	return nil, nil
