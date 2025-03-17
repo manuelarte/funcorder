@@ -15,13 +15,14 @@ type FileProcessor struct {
 	structs map[string]*models.StructHolder
 }
 
+// NewFileProcessor creates a new file processor.
 func NewFileProcessor() *FileProcessor {
 	return &FileProcessor{
 		structs: make(map[string]*models.StructHolder),
 	}
 }
 
-// Process process the ast node. It keeps track of the structs and their "constructors" and methods.
+// Process the ast node. It keeps track of the structs and their "constructors" and methods.
 func (fp *FileProcessor) Process(n ast.Node) bool {
 	switch castedN := n.(type) {
 	case *ast.File:
@@ -51,9 +52,10 @@ func (fp *FileProcessor) Analyze() []errors.LinterError {
 }
 
 func (fp *FileProcessor) addConstructor(sc models.StructConstructor) {
-	structReturn, _ := sc.GetStructReturn()
-	sh := fp.getOrCreate(structReturn.Name)
-	sh.AddConstructor(sc.GetConstructor())
+	if structReturn, ok := sc.GetStructReturn(); ok {
+		sh := fp.getOrCreate(structReturn.Name)
+		sh.AddConstructor(sc.GetConstructor())
+	}
 }
 
 func (fp *FileProcessor) addMethod(st string, n *ast.FuncDecl) {
