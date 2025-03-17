@@ -10,10 +10,19 @@ func NewMyStruct() *MyStruct { // want "should be placed after the struct declar
 	return &MyStruct{Name: "John"}
 }
 
+//nolint:recvcheck // testing linter
 type MyStruct struct {
 	Name string
 }
 
+func (m MyStruct) lenName() int { // want `unexported method \"lenName\" for struct \"MyStruct\" should be placed after the exported method \"GetName\"`
+	return len(m.Name)
+}
+
 func (m MyStruct) GetName() string {
 	return m.Name
+}
+
+func (m *MyStruct) SetName(name string) {
+	m.Name = name
 }

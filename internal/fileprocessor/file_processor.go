@@ -3,6 +3,8 @@ package fileprocessor
 import (
 	"go/ast"
 
+	"github.com/manuelarte/gofuncor/internal/utils"
+
 	"github.com/manuelarte/gofuncor/internal/errors"
 
 	"github.com/manuelarte/gofuncor/internal/models"
@@ -10,8 +12,7 @@ import (
 
 // FileProcessor Holder to store all the functions that are potential to be constructors and all the structs.
 type FileProcessor struct {
-	fileName string
-	structs  map[string]*models.StructHolder
+	structs map[string]*models.StructHolder
 }
 
 func NewFileProcessor() *FileProcessor {
@@ -55,14 +56,20 @@ func (fp *FileProcessor) addConstructor(sc models.StructConstructor) {
 	sh.AddConstructor(sc.GetConstructor())
 }
 
-func (fp *FileProcessor) newFileNode(n *ast.File) {
-	fp.fileName = n.Name.String()
+func (fp *FileProcessor) addMethod(st string, n *ast.FuncDecl) {
+	sh := fp.getOrCreate(st)
+	sh.AddMethod(n)
+}
+
+func (fp *FileProcessor) newFileNode(_ *ast.File) {
 	fp.structs = make(map[string]*models.StructHolder)
 }
 
 func (fp *FileProcessor) newFuncDecl(n *ast.FuncDecl) {
 	if sc, isSC := models.NewStructConstructor(n); isSC {
 		fp.addConstructor(sc)
+	} else if st, isMethod := utils.FuncIsMethod(n); isMethod {
+		fp.addMethod(st.Name, n)
 	}
 }
 

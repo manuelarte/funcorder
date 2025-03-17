@@ -2,8 +2,9 @@ package analyzer
 
 import (
 	"flag"
-	"github.com/manuelarte/gofuncor/internal/fileprocessor"
 	"go/ast"
+
+	"github.com/manuelarte/gofuncor/internal/fileprocessor"
 
 	"golang.org/x/tools/go/analysis"
 )

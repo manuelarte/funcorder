@@ -11,7 +11,7 @@ type StructConstructor struct {
 }
 
 func NewStructConstructor(funcDec *ast.FuncDecl) (StructConstructor, bool) {
-	if utils.FuncNameCanBeConstructor(funcDec) {
+	if utils.FuncCanBeConstructor(funcDec) {
 		return StructConstructor{
 			constructor: funcDec,
 		}, true
@@ -30,11 +30,5 @@ func (sc StructConstructor) GetConstructor() *ast.FuncDecl {
 }
 
 func (sc StructConstructor) returnType(expr ast.Expr) (*ast.Ident, bool) {
-	if pointerExpr, isPointerExpr := expr.(*ast.StarExpr); isPointerExpr {
-		return sc.returnType(pointerExpr.X)
-	}
-	if structExpr, isStructExpr := expr.(*ast.Ident); isStructExpr {
-		return structExpr, true
-	}
-	return nil, false
+	return utils.GetIdent(expr)
 }
