@@ -17,8 +17,8 @@ type MyStruct struct {
 	Name string
 }
 
-// ❌ `unexported method "lenName" for struct "MyStruct" 
-// should be placed after the exported method "GetName"`
+// ❌ unexported method 
+// placed after exported method
 func (m MyStruct) lenName() int { 
 	return len(m.Name)
 }
@@ -36,8 +36,8 @@ type MyStruct struct {
 	Name string
 }
 
-// ✅ `unexported method "lenName" for struct "MyStruct" 
-// placed after the exported method "GetName"`
+// ✅ exported methods before 
+// unexported methods
 func (m MyStruct) GetName() string {
 	return m.Name
 }
@@ -71,8 +71,8 @@ This rule checks that the `Consturctor` functions are placed after the struct de
 <tr><td>
 
 ```go
-// ❌ `constructor "NewMyStruct" should be placed 
-// after the struct declaration`
+// ❌ constructor "NewMyStruct" placed 
+// before the struct declaration
 func NewMyStruct() MyStruct {
     return MyStruct2{Name: "John"}
 }
@@ -92,7 +92,8 @@ type MyStruct struct {
 }
 
 // ✅ `constructor "NewMyStruct" placed 
-// after the struct declaration and before the struct's methods`
+// after the struct declaration 
+// and before the struct's methods`
 func NewMyStruct() MyStruct {
     return MyStruct2{Name: "John"}
 }
