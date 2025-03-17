@@ -7,6 +7,11 @@ Golang Linter to check Functions Order.
 
 This rule checks that the exported method are placed before the unexported ones, e.g:
 
+<table>
+<thead><tr><th>❌ Bad</th><th>✅ Good</th></tr></thead>
+<tbody>
+<tr><td>
+
 ```go
 type MyStruct struct {
 	Name string
@@ -23,17 +28,45 @@ func (m MyStruct) GetName() string {
 ...
 ```
 
-### Check `Constructors` methods are placed after struct declaration
+</td><td>
+
+```go
+type MyStruct struct {
+	Name string
+}
+
+// ✅ `unexported method "lenName" for struct "MyStruct" placed after the exported method "GetName"`
+func (m MyStruct) GetName() string {
+	return m.Name
+}
+
+func (m MyStruct) lenName() int {
+    return len(m.Name)
+}
+...
+```
+
+</td></tr>
+
+</tbody>
+</table>
+
+### Check `Constructors` functions are placed after struct declaration
 
 This rule checks that the `Consturctor` functions are placed after the struct declaration and before the struct's methods.
 
 <details>
-  <summary>Constructor method</summary>
+  <summary>Constructor function</summary>
 
 > [!NOTE]
 > This linter considers a constructor function a function that has the prefix *New*, or *Must*, and returns 1 or 2 types.
 > Where the 1st return type is an struct declared in the same file.
 </details>
+
+<table>
+<thead><tr><th>❌ Bad</th><th>✅ Good</th></tr></thead>
+<tbody>
+<tr><td>
 
 ```go
 // ❌ `constructor "NewMyStruct" should be placed after the struct declaration`
@@ -42,20 +75,33 @@ func NewMyStruct() MyStruct {
 }
 
 type MyStruct struct {
-	Name string
+    Name string
 }
 
-// `unexported method "lenName" for struct "MyStruct" should be placed after the exported method "GetName"`
-func (m MyStruct) lenName() int { 
-	return len(m.Name)
-}
-
-func (m MyStruct) GetName() string {
-	return m.Name
-}
 ...
 ```
 
+</td><td>
+
+```go
+type MyStruct struct {
+    Name string
+}
+
+// ✅ `constructor "NewMyStruct" placed after the struct declaration and before the struct's methods`
+func NewMyStruct() MyStruct {
+    return MyStruct2{Name: "John"}
+}
+
+// other MyStruct's methods
+...
+```
+
+</td></tr>
+
+</tbody>
+</table>
+
 ## Resources
 
-Following [uber guidelines](https://github.com/uber-go/guide/blob/master/style.md#function-grouping-and-ordering) 
++ Following [uber guidelines](https://github.com/uber-go/guide/blob/master/style.md#function-grouping-and-ordering) 
