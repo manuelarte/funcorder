@@ -6,21 +6,20 @@ import (
 )
 
 func FuncCanBeConstructor(n *ast.FuncDecl) bool {
-	expectedConstructorPrefix := "new"
-	if !n.Name.IsExported() {
-		return false
-	}
-	if n.Recv != nil {
-		return false
-	}
-	if !strings.HasPrefix(strings.ToLower(n.Name.Name), expectedConstructorPrefix) ||
-		len(n.Name.Name) <= len(expectedConstructorPrefix) {
+	if !n.Name.IsExported() || n.Recv != nil {
 		return false
 	}
 	if n.Type.Results == nil || len(n.Type.Results.List) == 0 {
 		return false
 	}
-	return true
+	expectedConstructorPrefixs := []string{"new", "must"}
+	for _, expectedConstructorPrefix := range expectedConstructorPrefixs {
+		if strings.HasPrefix(strings.ToLower(n.Name.Name), expectedConstructorPrefix) &&
+			len(n.Name.Name) > len(expectedConstructorPrefix) {
+			return true
+		}
+	}
+	return false
 }
 
 func FuncIsMethod(n *ast.FuncDecl) (*ast.Ident, bool) {

@@ -110,4 +110,4 @@ func NewMyStruct() MyStruct {
 
 ## Resources
 
-+ Following [uber guidelines](https://github.com/uber-go/guide/blob/master/style.md#function-grouping-and-ordering) 
++ Following Uber Style Guidelines about [function-grouping-and-ordering](https://github.com/uber-go/guide/blob/master/style.md#function-grouping-and-ordering) 

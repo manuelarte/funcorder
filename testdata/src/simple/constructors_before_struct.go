@@ -10,6 +10,10 @@ func NewMyStruct() *MyStruct { // want "should be placed after the struct declar
 	return &MyStruct{Name: "John"}
 }
 
+func MustMyStruct() *MyStruct { // want `function \"MustMyStruct\" for struct \"MyStruct\" should be placed after the struct declaration`
+	return NewMyStruct()
+}
+
 //nolint:recvcheck // testing linter
 type MyStruct struct {
 	Name string
