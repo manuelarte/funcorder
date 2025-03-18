@@ -60,9 +60,10 @@ This rule checks that the `Consturctor` functions are placed after the struct de
 <details>
   <summary>Constructor function</summary>
 
-> [!NOTE]
+> [!NOTE]  
 > This linter considers a constructor function a function that has the prefix *New*, or *Must*, and returns 1 or 2 types.
 > Where the 1st return type is an struct declared in the same file.
+
 </details>
 
 <table>
@@ -109,4 +110,4 @@ func NewMyStruct() MyStruct {
 
 ## Resources
 
-+ Following [uber guidelines](https://github.com/uber-go/guide/blob/master/style.md#function-grouping-and-ordering) 
++ Following Uber Style Guidelines about [function-grouping-and-ordering](https://github.com/uber-go/guide/blob/master/style.md#function-grouping-and-ordering) 

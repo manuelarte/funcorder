@@ -7,28 +7,28 @@ import (
 )
 
 type StructConstructor struct {
-	constructor *ast.FuncDecl
+	constructor  *ast.FuncDecl
+	structReturn *ast.Ident
 }
 
 func NewStructConstructor(funcDec *ast.FuncDecl) (StructConstructor, bool) {
 	if utils.FuncCanBeConstructor(funcDec) {
-		return StructConstructor{
-			constructor: funcDec,
-		}, true
+		expr := funcDec.Type.Results.List[0].Type
+		if returnType, ok := utils.GetIdent(expr); ok {
+			return StructConstructor{
+				constructor:  funcDec,
+				structReturn: returnType,
+			}, true
+		}
 	}
 	return StructConstructor{}, false
 }
 
 // GetStructReturn Return the struct linked to this "constructor".
-func (sc StructConstructor) GetStructReturn() (*ast.Ident, bool) {
-	expr := sc.constructor.Type.Results.List[0].Type
-	return sc.returnType(expr)
+func (sc StructConstructor) GetStructReturn() *ast.Ident {
+	return sc.structReturn
 }
 
 func (sc StructConstructor) GetConstructor() *ast.FuncDecl {
 	return sc.constructor
-}
-
-func (sc StructConstructor) returnType(expr ast.Expr) (*ast.Ident, bool) {
-	return utils.GetIdent(expr)
 }

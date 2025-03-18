@@ -9,6 +9,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### TODO
 
-- Added linter to check for `NewXXX` to be after struct declaration but before struct methods.
-- Added linter to check for `MustXXX` to be after struct declaration but before struct methods.
+- Added linter to check for `NewXXX` or `MustXXX` functions to be after struct declaration but before struct methods.
 - Add linter to check that exported (public) methods are before not exported (private) ones.
