@@ -6,12 +6,12 @@ import (
 	"golang.org/x/tools/go/analysis"
 )
 
+//nolint:gochecknoinits // linter
 func init() {
 	register.Plugin("gofuncor", New)
 }
 
-//nolint:unparam // linter
-func New(settings any) (register.LinterPlugin, error) {
+func New(_ any) (register.LinterPlugin, error) {
 	return GoFuncor{}, nil
 }
 
