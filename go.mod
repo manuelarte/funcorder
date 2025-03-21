@@ -1,8 +1,11 @@
 module github.com/manuelarte/gofuncor
 
-go 1.23.2
+go 1.23.7
 
-require golang.org/x/tools v0.31.0
+require (
+	github.com/golangci/plugin-module-register v0.1.1
+	golang.org/x/tools v0.31.0
+)
 
 require (
 	golang.org/x/mod v0.24.0 // indirect
