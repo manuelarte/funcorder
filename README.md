@@ -1,5 +1,17 @@
+[![Go Report Card](https://goreportcard.com/badge/github.com/manuelarte/gofuncor)](https://goreportcard.com/report/github.com/manuelarte/gofuncor)
+![version](https://img.shields.io/github/v/release/manuelarte/gofuncor)
 # 🧐 GoFuncOr
 Golang Linter to check Functions/Methods Order.
+
+## ⬇️ Getting Started
+
+Install GoFuncOr linter using
+
+> go install github.com/manuelarte/gofuncor@latest
+
+And then use it with
+
+> gofuncor ./...
 
 ## 🚀 Features
 
