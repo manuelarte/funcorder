@@ -1,6 +1,8 @@
 module github.com/manuelarte/gofuncor
 
-go 1.23
+go 1.23.0
+
+toolchain go1.23.7
 
 require (
 	github.com/golangci/plugin-module-register v0.1.1
