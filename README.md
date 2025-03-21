@@ -1,4 +1,4 @@
-# 🧐gofuncor
+# 🧐 GoFuncOr
 Golang Linter to check Functions/Methods Order.
 
 ## 🚀 Features
