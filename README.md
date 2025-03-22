@@ -1,5 +1,12 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/manuelarte/gofuncor)](https://goreportcard.com/report/github.com/manuelarte/gofuncor)
 ![version](https://img.shields.io/github/v/release/manuelarte/gofuncor)
+- [🧐 GoFuncOr](#-gofuncor)
+    * [⬇️ Getting Started](#-getting-started)
+    * [🚀 Features](#-features)
+        + [Check exported methods are placed before not exported methods](#check-exported-methods-are-placed-before-not-exported-methods)
+        + [Check `Constructors` functions are placed after struct declaration](#check-constructors-functions-are-placed-after-struct-declaration)
+    * [Resources](#resources)
+
 # 🧐 GoFuncOr
 Golang Linter to check Functions/Methods Order.
 
