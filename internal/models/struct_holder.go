@@ -49,35 +49,28 @@ func (sh *StructHolder) Analyze() []errors.LinterError {
 		}
 	}
 
-	var firstExportedMethod *ast.FuncDecl
-	var firstNotExportedMethod *ast.FuncDecl
+	var lastExportedMethod *ast.FuncDecl
 	for _, m := range sh.StructMethods {
-		//nolint:nestif // not so complex
 		if m.Name.IsExported() {
-			if firstExportedMethod == nil {
-				firstExportedMethod = m
+			if lastExportedMethod == nil {
+				lastExportedMethod = m
 			}
-			if firstExportedMethod.Pos() > m.Pos() {
-				firstExportedMethod = m
+			if lastExportedMethod.Pos() < m.Pos() {
+				lastExportedMethod = m
 			}
-		} else {
-			if firstNotExportedMethod == nil {
-				firstNotExportedMethod = m
-			}
-			if firstNotExportedMethod.Pos() > m.Pos() {
-				firstNotExportedMethod = m
-			}
-		}
-		if firstExportedMethod != nil && firstNotExportedMethod != nil &&
-			firstExportedMethod.Pos() > firstNotExportedMethod.Pos() {
-			errs = append(errs, errors.PrivateMethodBeforePublicForStructTypeError{
-				Struct:        sh.Struct,
-				PrivateMethod: firstNotExportedMethod,
-				PublicMethod:  firstExportedMethod,
-			})
-			break
 		}
 	}
+
+	for _, m := range sh.StructMethods {
+		if !m.Name.IsExported() && m.Pos() < lastExportedMethod.Pos() {
+			errs = append(errs, errors.PrivateMethodBeforePublicForStructTypeError{
+				Struct:        sh.Struct,
+				PrivateMethod: m,
+				PublicMethod:  lastExportedMethod,
+			})
+		}
+	}
+
 	// TODO also check that the methods are declared after the struct
 	return errs
 }
