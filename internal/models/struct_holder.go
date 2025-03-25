@@ -25,7 +25,6 @@ func (sh *StructHolder) AddMethod(fn *ast.FuncDecl) {
 	sh.StructMethods = append(sh.StructMethods, fn)
 }
 
-//nolint:gocognit // refactor later
 func (sh *StructHolder) Analyze() []errors.LinterError {
 	// TODO maybe sort constructors and then report also, like NewXXX before MustXXX
 	var errs []errors.LinterError
