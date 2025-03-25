@@ -19,7 +19,7 @@ type MyStruct struct {
 	Name string
 }
 
-func (m MyStruct) lenName() int { // want `unexported method \"lenName\" for struct \"MyStruct\" should be placed after the exported method \"GetName\"`
+func (m MyStruct) lenName() int { // want `unexported method \"lenName\" for struct \"MyStruct\" should be placed after the exported method \"SetName\"`
 	return len(m.Name)
 }
 
