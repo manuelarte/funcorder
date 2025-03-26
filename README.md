@@ -22,9 +22,9 @@ And then use it with
 
 ## 🚀 Features
 
-### Check exported methods are placed before not exported methods
+### Check exported methods are placed before non-exported methods
 
-This rule checks that the exported method are placed before the unexported ones, e.g:
+This rule checks that the exported method are placed before the non-exported ones, e.g:
 
 <table>
 <thead><tr><th>❌ Bad</th><th>✅ Good</th></tr></thead>
@@ -36,8 +36,8 @@ type MyStruct struct {
 	Name string
 }
 
-// ❌ unexported method 
-// placed after exported method
+// ❌ non-exported method 
+// placed before exported method
 func (m MyStruct) lenName() int { 
 	return len(m.Name)
 }
@@ -56,7 +56,7 @@ type MyStruct struct {
 }
 
 // ✅ exported methods before 
-// unexported methods
+// non-exported methods
 func (m MyStruct) GetName() string {
 	return m.Name
 }
@@ -80,7 +80,7 @@ This rule checks that the `Consturctor` functions are placed after the struct de
   <summary>Constructor function</summary>
 
 > [!NOTE]  
-> This linter considers a constructor function a function that has the prefix *New*, or *Must*, and returns 1 or 2 types.
+> This linter considers a Constructor function a function that has the prefix *New*, or *Must*, and returns 1 or 2 types.
 > Where the 1st return type is an struct declared in the same file.
 
 </details>
