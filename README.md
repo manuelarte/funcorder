@@ -1,24 +1,24 @@
-[![Go Report Card](https://goreportcard.com/badge/github.com/manuelarte/gofuncor)](https://goreportcard.com/report/github.com/manuelarte/gofuncor)
-![version](https://img.shields.io/github/v/release/manuelarte/gofuncor)
-- [🧐 GoFuncOr](#-gofuncor)
+[![Go Report Card](https://goreportcard.com/badge/github.com/manuelarte/funcorder)](https://goreportcard.com/report/github.com/manuelarte/funcorder)
+![version](https://img.shields.io/github/v/release/manuelarte/funcorder)
+- [🧐 FuncOrder](#-funcorder)
     * [⬇️ Getting Started](#-getting-started)
     * [🚀 Features](#-features)
         + [Check exported methods are placed before not exported methods](#check-exported-methods-are-placed-before-not-exported-methods)
         + [Check `Constructors` functions are placed after struct declaration](#check-constructors-functions-are-placed-after-struct-declaration)
     * [Resources](#resources)
 
-# 🧐 GoFuncOr
+# 🧐 FuncOrder
 Go Linter to check Functions/Methods Order.
 
 ## ⬇️ Getting Started
 
-Install GoFuncOr linter using
+Install FuncOrder linter using
 
-> go install github.com/manuelarte/gofuncor@latest
+> go install github.com/manuelarte/funcorder@latest
 
 And then use it with
 
-> gofuncor ./...
+> funcorder ./...
 
 ## 🚀 Features
 

@@ -3,7 +3,7 @@ package models
 import (
 	"go/ast"
 
-	"github.com/manuelarte/gofuncor/internal/utils"
+	"github.com/manuelarte/funcorder/internal/utils"
 )
 
 type StructConstructor struct {
