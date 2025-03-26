@@ -60,13 +60,15 @@ func (sh *StructHolder) Analyze() []errors.LinterError {
 		}
 	}
 
-	for _, m := range sh.StructMethods {
-		if !m.Name.IsExported() && m.Pos() < lastExportedMethod.Pos() {
-			errs = append(errs, errors.PrivateMethodBeforePublicForStructTypeError{
-				Struct:        sh.Struct,
-				PrivateMethod: m,
-				PublicMethod:  lastExportedMethod,
-			})
+	if lastExportedMethod != nil {
+		for _, m := range sh.StructMethods {
+			if !m.Name.IsExported() && m.Pos() < lastExportedMethod.Pos() {
+				errs = append(errs, errors.PrivateMethodBeforePublicForStructTypeError{
+					Struct:        sh.Struct,
+					PrivateMethod: m,
+					PublicMethod:  lastExportedMethod,
+				})
+			}
 		}
 	}
 
