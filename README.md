@@ -8,7 +8,7 @@
     * [Resources](#resources)
 
 # 🧐 GoFuncOr
-Golang Linter to check Functions/Methods Order.
+Go Linter to check Functions/Methods Order.
 
 ## ⬇️ Getting Started
 
