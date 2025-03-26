@@ -3,11 +3,11 @@ package fileprocessor
 import (
 	"go/ast"
 
-	"github.com/manuelarte/gofuncor/internal/utils"
+	"github.com/manuelarte/funcorder/internal/utils"
 
-	"github.com/manuelarte/gofuncor/internal/errors"
+	"github.com/manuelarte/funcorder/internal/errors"
 
-	"github.com/manuelarte/gofuncor/internal/models"
+	"github.com/manuelarte/funcorder/internal/models"
 )
 
 // FileProcessor Holder to store all the functions that are potential to be constructors and all the structs.

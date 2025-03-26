@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/manuelarte/gofuncor/pkg/analyzer"
+	"github.com/manuelarte/funcorder/pkg/analyzer"
 	"golang.org/x/tools/go/analysis/analysistest"
 )
 

@@ -1,4 +1,4 @@
-module github.com/manuelarte/gofuncor
+module github.com/manuelarte/funcorder
 
 go 1.23.0
 

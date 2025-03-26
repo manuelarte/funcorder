@@ -4,7 +4,7 @@ import (
 	"flag"
 	"go/ast"
 
-	"github.com/manuelarte/gofuncor/internal/fileprocessor"
+	"github.com/manuelarte/funcorder/internal/fileprocessor"
 
 	"golang.org/x/tools/go/analysis"
 )
@@ -14,7 +14,7 @@ var flagSet flag.FlagSet
 
 func NewAnalyzer() *analysis.Analyzer {
 	return &analysis.Analyzer{
-		Name:  "gofuncor",
+		Name:  "funcorder",
 		Doc:   "checks function order",
 		Run:   run,
 		Flags: flagSet,
