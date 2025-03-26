@@ -94,7 +94,7 @@ This rule checks that the `Consturctor` functions are placed after the struct de
 // ❌ constructor "NewMyStruct" placed 
 // before the struct declaration
 func NewMyStruct() MyStruct {
-    return MyStruct2{Name: "John"}
+    return MyStruct{Name: "John"}
 }
 
 type MyStruct struct {
@@ -115,7 +115,7 @@ type MyStruct struct {
 // after the struct declaration 
 // and before the struct's methods`
 func NewMyStruct() MyStruct {
-    return MyStruct2{Name: "John"}
+    return MyStruct{Name: "John"}
 }
 
 // other MyStruct's methods
