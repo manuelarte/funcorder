@@ -3,7 +3,7 @@ package models
 import (
 	"go/ast"
 
-	"github.com/manuelarte/funcorder/internal/utils"
+	"github.com/manuelarte/funcorder/internal/astutils"
 )
 
 type StructConstructor struct {
@@ -12,9 +12,9 @@ type StructConstructor struct {
 }
 
 func NewStructConstructor(funcDec *ast.FuncDecl) (StructConstructor, bool) {
-	if utils.FuncCanBeConstructor(funcDec) {
+	if astutils.FuncCanBeConstructor(funcDec) {
 		expr := funcDec.Type.Results.List[0].Type
-		if returnType, ok := utils.GetIdent(expr); ok {
+		if returnType, ok := astutils.GetIdent(expr); ok {
 			return StructConstructor{
 				constructor:  funcDec,
 				structReturn: returnType,

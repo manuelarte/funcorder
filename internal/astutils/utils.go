@@ -1,4 +1,4 @@
-package utils
+package astutils
 
 import (
 	"go/ast"
@@ -12,8 +12,8 @@ func FuncCanBeConstructor(n *ast.FuncDecl) bool {
 	if n.Type.Results == nil || len(n.Type.Results.List) == 0 {
 		return false
 	}
-	expectedConstructorPrefixs := []string{"new", "must"}
-	for _, expectedConstructorPrefix := range expectedConstructorPrefixs {
+	expectedConstructorPrefixes := []string{"new", "must"}
+	for _, expectedConstructorPrefix := range expectedConstructorPrefixes {
 		if strings.HasPrefix(strings.ToLower(n.Name.Name), expectedConstructorPrefix) &&
 			len(n.Name.Name) > len(expectedConstructorPrefix) {
 			return true
