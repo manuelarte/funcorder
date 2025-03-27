@@ -1,6 +1,5 @@
 version: "2"
-run:
-  relative-path-mode: gomod
+
 linters:
   default: none
   enable:
@@ -76,6 +75,7 @@ linters:
     - usetesting
     - wastedassign
     - whitespace
+
   settings:
     cyclop:
       max-complexity: 30
@@ -190,12 +190,11 @@ linters:
       context: scope
     usetesting:
       os-temp-dir: true
+
   exclusions:
-    generated: lax
     presets:
       - comments
       - common-false-positives
-      - legacy
       - std-error-handling
     rules:
       - linters:
@@ -214,12 +213,10 @@ linters:
           - noctx
           - wrapcheck
         path: _test\.go
-    paths:
-      - third_party$
-      - builtin$
-      - examples$
+
 issues:
   max-same-issues: 50
+
 formatters:
   enable:
     - gofmt
@@ -230,9 +227,6 @@ formatters:
       rewrite-rules:
         - pattern: 'interface{}'
           replacement: 'any'
-  exclusions:
-    generated: lax
-    paths:
-      - third_party$
-      - builtin$
-      - examples$
+    goimports:
+      local-prefixes:
+        - github.com/manuelarte/funcorder

@@ -3,8 +3,9 @@ package analyzer_test
 import (
 	"testing"
 
-	"github.com/manuelarte/funcorder/analyzer"
 	"golang.org/x/tools/go/analysis/analysistest"
+
+	"github.com/manuelarte/funcorder/analyzer"
 )
 
 func TestAll(t *testing.T) {

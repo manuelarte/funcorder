@@ -4,9 +4,9 @@ import (
 	"flag"
 	"go/ast"
 
-	"github.com/manuelarte/funcorder/internal/fileprocessor"
-
 	"golang.org/x/tools/go/analysis"
+
+	"github.com/manuelarte/funcorder/internal/fileprocessor"
 )
 
 //nolint:gochecknoglobals // global variable
