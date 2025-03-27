@@ -1,6 +1,7 @@
 package fileprocessor
 
 import (
+	"github.com/manuelarte/funcorder/internal/features"
 	"go/ast"
 
 	"github.com/manuelarte/funcorder/internal/astutils"
@@ -10,13 +11,15 @@ import (
 
 // FileProcessor Holder to store all the functions that are potential to be constructors and all the structs.
 type FileProcessor struct {
-	structs map[string]*models.StructHolder
+	structs  map[string]*models.StructHolder
+	features features.Feature
 }
 
 // NewFileProcessor creates a new file processor.
-func NewFileProcessor() *FileProcessor {
+func NewFileProcessor(checkers features.Feature) *FileProcessor {
 	return &FileProcessor{
-		structs: make(map[string]*models.StructHolder),
+		structs:  make(map[string]*models.StructHolder),
+		features: checkers,
 	}
 }
 
@@ -81,7 +84,7 @@ func (fp *FileProcessor) getOrCreate(structName string) *models.StructHolder {
 	if holder, ok := fp.structs[structName]; ok {
 		return holder
 	}
-	created := &models.StructHolder{}
+	created := &models.StructHolder{Features: fp.features}
 	fp.structs[structName] = created
 	return created
 }
