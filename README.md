@@ -3,7 +3,7 @@
 - [🧐 FuncOrder](#-funcorder)
     * [⬇️ Getting Started](#-getting-started)
     * [🚀 Features](#-features)
-        + [Check exported methods are placed before not exported methods](#check-exported-methods-are-placed-before-not-exported-methods)
+        + [Check exported methods are placed before non-exported methods](#check-exported-methods-are-placed-before-non-exported-methods)
         + [Check `Constructors` functions are placed after struct declaration](#check-constructors-functions-are-placed-after-struct-declaration)
     * [Resources](#resources)
 
@@ -74,14 +74,14 @@ func (m MyStruct) lenName() int {
 
 ### Check `Constructors` functions are placed after struct declaration
 
-This rule checks that the `Consturctor` functions are placed after the struct declaration and before the struct's methods.
+This rule checks that the `Constructor` functions are placed after the struct declaration and before the struct's methods.
 
 <details>
   <summary>Constructor function</summary>
 
 > [!NOTE]  
 > This linter considers a Constructor function a function that has the prefix *New*, or *Must*, and returns 1 or 2 types.
-> Where the 1st return type is an struct declared in the same file.
+> Where the 1st return type is a struct declared in the same file.
 
 </details>
 

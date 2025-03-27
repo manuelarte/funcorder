@@ -3,7 +3,7 @@ package fileprocessor
 import (
 	"go/ast"
 
-	"github.com/manuelarte/funcorder/internal/utils"
+	"github.com/manuelarte/funcorder/internal/astutils"
 
 	"github.com/manuelarte/funcorder/internal/errors"
 
@@ -69,7 +69,7 @@ func (fp *FileProcessor) newFileNode(_ *ast.File) {
 func (fp *FileProcessor) newFuncDecl(n *ast.FuncDecl) {
 	if sc, isSC := models.NewStructConstructor(n); isSC {
 		fp.addConstructor(sc)
-	} else if st, isMethod := utils.FuncIsMethod(n); isMethod {
+	} else if st, isMethod := astutils.FuncIsMethod(n); isMethod {
 		fp.addMethod(st.Name, n)
 	}
 }
