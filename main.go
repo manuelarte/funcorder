@@ -1,8 +1,9 @@
 package main
 
 import (
-	"github.com/manuelarte/funcorder/analyzer"
 	"golang.org/x/tools/go/analysis/singlechecker"
+
+	"github.com/manuelarte/funcorder/analyzer"
 )
 
 func main() {

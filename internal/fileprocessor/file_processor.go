@@ -4,9 +4,7 @@ import (
 	"go/ast"
 
 	"github.com/manuelarte/funcorder/internal/astutils"
-
 	"github.com/manuelarte/funcorder/internal/errors"
-
 	"github.com/manuelarte/funcorder/internal/models"
 )
 
