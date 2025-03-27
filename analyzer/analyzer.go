@@ -1,7 +1,6 @@
 package analyzer
 
 import (
-	"flag"
 	"go/ast"
 
 	"github.com/manuelarte/funcorder/internal/features"
@@ -11,33 +10,33 @@ import (
 	"github.com/manuelarte/funcorder/internal/fileprocessor"
 )
 
-//nolint:gochecknoglobals // global variable
-var FlagSet flag.FlagSet
-
-var (
-	//nolint:gochecknoglobals // global variable
-	constructorsCheck = FlagSet.Bool("constructors_check", true,
-		"enable/disable constructors after struct check")
-	//nolint:gochecknoglobals // global variable
-	structMethodsCheck = FlagSet.Bool("struct_methods_check", true,
-		"enable/disable exported struct's methods before non-exported")
-)
-
 func NewAnalyzer() *analysis.Analyzer {
-	return &analysis.Analyzer{
-		Name:  "funcorder",
-		Doc:   "checks the order of functions, methods, and constructors",
-		Run:   run,
-		Flags: FlagSet,
+	f := funcorder{}
+	a := &analysis.Analyzer{
+		Name: "funcorder",
+		Doc:  "checks the order of functions, methods, and constructors",
+		Run:  f.run,
 	}
+	a.Flags.BoolVar(&f.constructorsCheck, "constructors_check", true,
+		"enable/disable feature to check constructors are placed after struct declaration")
+	a.Flags.BoolVar(&f.structMethodsCheck, "struct_methods_check", true,
+		"enable/disable feature to check whether the exported struct's methods "+
+			"are placed before the non-exported")
+
+	return a
 }
 
-func run(pass *analysis.Pass) (any, error) {
+type funcorder struct {
+	constructorsCheck  bool
+	structMethodsCheck bool
+}
+
+func (f *funcorder) run(pass *analysis.Pass) (any, error) {
 	var enabledCheckers features.Feature
-	if *constructorsCheck {
+	if f.constructorsCheck {
 		enabledCheckers |= features.ConstructorCheck
 	}
-	if *structMethodsCheck {
+	if f.structMethodsCheck {
 		enabledCheckers |= features.StructMethodsCheck
 	}
 	fp := fileprocessor.NewFileProcessor(enabledCheckers)
