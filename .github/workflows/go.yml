@@ -6,23 +6,22 @@ name: Go
 on:
   workflow_dispatch:
   push:
-  pull_request:
     branches: [ "main" ]
+  pull_request:
 
 jobs:
 
   build:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        go-version: [ oldstable, stable ]
+        go: [ oldstable, stable ]
+        os: [ubuntu-latest, macos-latest]
     steps:
     - uses: actions/checkout@v4
-
-    - name: Set up Go ${{ matrix.go-version }}
-      uses: actions/setup-go@v5
+    - uses: actions/setup-go@v5
       with:
-        go-version: ${{ matrix.go-version }}
+        go-version: ${{ matrix.go }}
 
     - name: Build
       run: go build -v ./...
