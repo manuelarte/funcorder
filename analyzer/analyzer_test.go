@@ -13,23 +13,23 @@ func TestAll(t *testing.T) {
 }
 
 func TestConstructorCheckOnly(t *testing.T) {
-	_ = analyzer.FlagSet.Parse([]string{})
-	if err := analyzer.FlagSet.Set("constructors_check", "true"); err != nil {
+	a := analyzer.NewAnalyzer()
+	if err := a.Flags.Set("constructors_check", "true"); err != nil {
 		t.Fatal(err)
 	}
-	if err := analyzer.FlagSet.Set("struct_methods_check", "false"); err != nil {
+	if err := a.Flags.Set("struct_methods_check", "false"); err != nil {
 		t.Fatal(err)
 	}
-	analysistest.Run(t, analysistest.TestData(), analyzer.NewAnalyzer(), "constructor_check")
+	analysistest.Run(t, analysistest.TestData(), a, "constructor_check")
 }
 
 func TestStructMethodsCheckOnly(t *testing.T) {
-	_ = analyzer.FlagSet.Parse([]string{})
-	if err := analyzer.FlagSet.Set("constructors_check", "false"); err != nil {
+	a := analyzer.NewAnalyzer()
+	if err := a.Flags.Set("constructors_check", "false"); err != nil {
 		t.Fatal(err)
 	}
-	if err := analyzer.FlagSet.Set("struct_methods_check", "true"); err != nil {
+	if err := a.Flags.Set("struct_methods_check", "true"); err != nil {
 		t.Fatal(err)
 	}
-	analysistest.Run(t, analysistest.TestData(), analyzer.NewAnalyzer(), "struct_methods_check")
+	analysistest.Run(t, analysistest.TestData(), a, "struct_methods_check")
 }
