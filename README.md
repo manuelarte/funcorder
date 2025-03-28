@@ -1,13 +1,15 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/manuelarte/funcorder)](https://goreportcard.com/report/github.com/manuelarte/funcorder)
 ![version](https://img.shields.io/github/v/release/manuelarte/funcorder)
+
 - [🧐 FuncOrder](#-funcorder)
-    * [⬇️ Getting Started](#-getting-started)
-    * [🚀 Features](#-features)
-        + [Check exported methods are placed before non-exported methods](#check-exported-methods-are-placed-before-non-exported-methods)
-        + [Check `Constructors` functions are placed after struct declaration](#check-constructors-functions-are-placed-after-struct-declaration)
-    * [Resources](#resources)
+  - [⬇️ Getting Started](#-getting-started)
+  - [🚀 Features](#-features)
+    - [Check exported methods are placed before non-exported methods](#check-exported-methods-are-placed-before-non-exported-methods)
+    - [Check `Constructors` functions are placed after struct declaration](#check-constructors-functions-are-placed-after-struct-declaration)
+  - [Resources](#resources)
 
 # 🧐 FuncOrder
+
 Go Linter to check Functions/Methods Order.
 
 ## ⬇️ Getting Started
@@ -21,8 +23,9 @@ And then use it with
 > funcorder [-constructor-check=true|false] [-struct-method-check=true|false] ./...
 
 Parameters:
-* `constructor-check`: `true|false` (default `true`) enable|disable check constructor is placed after struct declaration and before struct's methods.
-* `struct-method-check`: `true|false` (default `true`) enable|disable check exported struct's methods are declared before non-exported.
+
+- `constructor-check`: `true|false` (default `true`) Check that constructor is placed after struct declaration and before struct's methods.
+- `struct-method-check`: `true|false` (default `true`) Check that exported struct's methods are declared before non-exported.
 
 ## 🚀 Features
 
@@ -37,17 +40,17 @@ This rule checks that the exported method are placed before the non-exported one
 
 ```go
 type MyStruct struct {
-	Name string
+ Name string
 }
 
 // ❌ non-exported method 
 // placed before exported method
 func (m MyStruct) lenName() int { 
-	return len(m.Name)
+ return len(m.Name)
 }
 
 func (m MyStruct) GetName() string {
-	return m.Name
+ return m.Name
 }
 ...
 ```
@@ -56,13 +59,13 @@ func (m MyStruct) GetName() string {
 
 ```go
 type MyStruct struct {
-	Name string
+ Name string
 }
 
 // ✅ exported methods before 
 // non-exported methods
 func (m MyStruct) GetName() string {
-	return m.Name
+ return m.Name
 }
 
 func (m MyStruct) lenName() int {
@@ -83,7 +86,6 @@ This rule checks that the `Constructor` functions are placed after the struct de
 <details>
   <summary>Constructor function</summary>
 
-> [!NOTE]  
 > This linter considers a Constructor function a function that has the prefix *New*, or *Must*, and returns 1 or 2 types.
 > Where the 1st return type is a struct declared in the same file.
 
@@ -133,4 +135,4 @@ func NewMyStruct() MyStruct {
 
 ## Resources
 
-+ Following Uber Style Guidelines about [function-grouping-and-ordering](https://github.com/uber-go/guide/blob/master/style.md#function-grouping-and-ordering) 
+- Following Uber Style Guidelines about [function-grouping-and-ordering](https://github.com/uber-go/guide/blob/master/style.md#function-grouping-and-ordering)
