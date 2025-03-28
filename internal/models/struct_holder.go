@@ -55,7 +55,7 @@ func (sh *StructHolder) Analyze() []errors.LinterError {
 		}
 	}
 
-	if sh.Features.IsEnabled(features.StructMethodsCheck) {
+	if sh.Features.IsEnabled(features.StructMethodCheck) {
 		var lastExportedMethod *ast.FuncDecl
 		for _, m := range sh.StructMethods {
 			if m.Name.IsExported() {

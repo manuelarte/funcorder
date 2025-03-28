@@ -18,7 +18,7 @@ func NewAnalyzer() *analysis.Analyzer {
 	}
 	a.Flags.BoolVar(&f.constructorCheck, "constructor-check", true,
 		"enable/disable feature to check constructors are placed after struct declaration")
-	a.Flags.BoolVar(&f.structMethodsCheck, "struct-methods-check", true,
+	a.Flags.BoolVar(&f.structMethodCheck, "struct-method-check", true,
 		"enable/disable feature to check whether the exported struct's methods "+
 			"are placed before the non-exported")
 
@@ -26,8 +26,8 @@ func NewAnalyzer() *analysis.Analyzer {
 }
 
 type funcorder struct {
-	constructorCheck   bool
-	structMethodsCheck bool
+	constructorCheck  bool
+	structMethodCheck bool
 }
 
 func (f *funcorder) run(pass *analysis.Pass) (any, error) {
@@ -35,8 +35,8 @@ func (f *funcorder) run(pass *analysis.Pass) (any, error) {
 	if f.constructorCheck {
 		enabledCheckers |= features.ConstructorCheck
 	}
-	if f.structMethodsCheck {
-		enabledCheckers |= features.StructMethodsCheck
+	if f.structMethodCheck {
+		enabledCheckers |= features.StructMethodCheck
 	}
 	fp := fileprocessor.NewFileProcessor(enabledCheckers)
 	for _, file := range pass.Files {

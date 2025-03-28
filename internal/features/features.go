@@ -2,7 +2,7 @@ package features
 
 const (
 	ConstructorCheck Feature = 1 << iota
-	StructMethodsCheck
+	StructMethodCheck
 )
 
 type Feature uint8
