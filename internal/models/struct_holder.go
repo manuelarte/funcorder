@@ -81,7 +81,7 @@ func (sh *StructHolder) Analyze() []analysis.Diagnostic {
 					continue
 				}
 
-				reports = append(reports, diag.NewPrivateMethodBeforePublicForStructType(sh.Struct, m, lastExportedMethod))
+				reports = append(reports, diag.NewNonExportedMethodBeforeExportedForStruct(sh.Struct, m, lastExportedMethod))
 			}
 		}
 	}

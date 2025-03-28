@@ -27,7 +27,7 @@ func NewConstructorNotBeforeStructMethod(
 	}
 }
 
-func NewPrivateMethodBeforePublicForStructType(
+func NewNonExportedMethodBeforeExportedForStruct(
 	structSpec *ast.TypeSpec,
 	privateMethod *ast.FuncDecl,
 	publicMethod *ast.FuncDecl,
