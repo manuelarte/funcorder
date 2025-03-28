@@ -1,5 +1,21 @@
 version: "2"
 
+formatters:
+  enable:
+    - gofmt
+    - gci
+  settings:
+    gofmt:
+      simplify: true
+      rewrite-rules:
+        - pattern: 'interface{}'
+          replacement: 'any'
+    gci:
+      sections:
+        - standard
+        - default
+        - localmodule
+
 linters:
   default: none
   enable:
@@ -216,17 +232,3 @@ linters:
 
 issues:
   max-same-issues: 50
-
-formatters:
-  enable:
-    - gofmt
-    - goimports
-  settings:
-    gofmt:
-      simplify: true
-      rewrite-rules:
-        - pattern: 'interface{}'
-          replacement: 'any'
-    goimports:
-      local-prefixes:
-        - github.com/manuelarte/funcorder
