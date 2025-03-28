@@ -1,29 +1,44 @@
 package analyzer
 
 import (
-	"flag"
 	"go/ast"
 
 	"golang.org/x/tools/go/analysis"
 
+	"github.com/manuelarte/funcorder/internal/features"
 	"github.com/manuelarte/funcorder/internal/fileprocessor"
 )
 
-//nolint:gochecknoglobals // global variable
-var flagSet flag.FlagSet
-
 func NewAnalyzer() *analysis.Analyzer {
-	return &analysis.Analyzer{
-		Name:  "funcorder",
-		Doc:   "checks function order",
-		Run:   run,
-		Flags: flagSet,
+	f := funcorder{}
+	a := &analysis.Analyzer{
+		Name: "funcorder",
+		Doc:  "checks the order of functions, methods, and constructors",
+		Run:  f.run,
 	}
+	a.Flags.BoolVar(&f.constructorCheck, "constructor-check", true,
+		"enable/disable feature to check constructors are placed after struct declaration")
+	a.Flags.BoolVar(&f.structMethodCheck, "struct-method-check", true,
+		"enable/disable feature to check whether the exported struct's methods "+
+			"are placed before the non-exported")
+
+	return a
 }
 
-func run(pass *analysis.Pass) (any, error) {
-	fp := fileprocessor.NewFileProcessor()
+type funcorder struct {
+	constructorCheck  bool
+	structMethodCheck bool
+}
 
+func (f *funcorder) run(pass *analysis.Pass) (any, error) {
+	var enabledCheckers features.Feature
+	if f.constructorCheck {
+		enabledCheckers |= features.ConstructorCheck
+	}
+	if f.structMethodCheck {
+		enabledCheckers |= features.StructMethodCheck
+	}
+	fp := fileprocessor.NewFileProcessor(enabledCheckers)
 	for _, file := range pass.Files {
 		ast.Inspect(file, func(n ast.Node) bool {
 			if _, ok := n.(*ast.File); ok {
@@ -40,6 +55,6 @@ func run(pass *analysis.Pass) (any, error) {
 	for _, err := range errs {
 		pass.Report(analysis.Diagnostic{Pos: err.GetPos(), Message: err.Error()})
 	}
-	//nolint:nilnil //interface{}, error
+	//nolint:nilnil //any, error
 	return nil, nil
 }

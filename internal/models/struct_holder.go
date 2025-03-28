@@ -5,10 +5,13 @@ import (
 	"sort"
 
 	"github.com/manuelarte/funcorder/internal/errors"
+	"github.com/manuelarte/funcorder/internal/features"
 )
 
 // StructHolder contains all the information around a Go struct.
 type StructHolder struct {
+	// The features to be analyzed
+	Features features.Feature
 	// The struct declaration
 	Struct *ast.TypeSpec
 	// A Struct constructor is considered if starts with `New...` and the 1st output parameter is a struct
@@ -25,7 +28,7 @@ func (sh *StructHolder) AddMethod(fn *ast.FuncDecl) {
 	sh.StructMethods = append(sh.StructMethods, fn)
 }
 
-//nolint:gocognit // refactor later
+//nolint:gocognit,nestif // refactor later
 func (sh *StructHolder) Analyze() []errors.LinterError {
 	// TODO maybe sort constructors and then report also, like NewXXX before MustXXX
 	var errs []errors.LinterError
@@ -33,42 +36,46 @@ func (sh *StructHolder) Analyze() []errors.LinterError {
 		return sh.StructMethods[i].Pos() < sh.StructMethods[j].Pos()
 	})
 	structPos := sh.Struct.Pos()
-	for _, c := range sh.Constructors {
-		if c.Pos() < structPos {
-			errs = append(errs, errors.ConstructorNotAfterStructTypeError{
-				Struct:      sh.Struct,
-				Constructor: c,
-			})
-		}
-		if len(sh.StructMethods) > 0 && c.Pos() > sh.StructMethods[0].Pos() {
-			errs = append(errs, errors.ConstructorNotBeforeStructMethodsError{
-				Struct:      sh.Struct,
-				Constructor: c,
-				Method:      sh.StructMethods[0],
-			})
-		}
-	}
-
-	var lastExportedMethod *ast.FuncDecl
-	for _, m := range sh.StructMethods {
-		if m.Name.IsExported() {
-			if lastExportedMethod == nil {
-				lastExportedMethod = m
-			}
-			if lastExportedMethod.Pos() < m.Pos() {
-				lastExportedMethod = m
-			}
-		}
-	}
-
-	if lastExportedMethod != nil {
-		for _, m := range sh.StructMethods {
-			if !m.Name.IsExported() && m.Pos() < lastExportedMethod.Pos() {
-				errs = append(errs, errors.PrivateMethodBeforePublicForStructTypeError{
-					Struct:        sh.Struct,
-					PrivateMethod: m,
-					PublicMethod:  lastExportedMethod,
+	if sh.Features.IsEnabled(features.ConstructorCheck) {
+		for _, c := range sh.Constructors {
+			if c.Pos() < structPos {
+				errs = append(errs, errors.ConstructorNotAfterStructTypeError{
+					Struct:      sh.Struct,
+					Constructor: c,
 				})
+			}
+			if len(sh.StructMethods) > 0 && c.Pos() > sh.StructMethods[0].Pos() {
+				errs = append(errs, errors.ConstructorNotBeforeStructMethodsError{
+					Struct:      sh.Struct,
+					Constructor: c,
+					Method:      sh.StructMethods[0],
+				})
+			}
+		}
+	}
+
+	if sh.Features.IsEnabled(features.StructMethodCheck) {
+		var lastExportedMethod *ast.FuncDecl
+		for _, m := range sh.StructMethods {
+			if m.Name.IsExported() {
+				if lastExportedMethod == nil {
+					lastExportedMethod = m
+				}
+				if lastExportedMethod.Pos() < m.Pos() {
+					lastExportedMethod = m
+				}
+			}
+		}
+
+		if lastExportedMethod != nil {
+			for _, m := range sh.StructMethods {
+				if !m.Name.IsExported() && m.Pos() < lastExportedMethod.Pos() {
+					errs = append(errs, errors.PrivateMethodBeforePublicForStructTypeError{
+						Struct:        sh.Struct,
+						PrivateMethod: m,
+						PublicMethod:  lastExportedMethod,
+					})
+				}
 			}
 		}
 	}
