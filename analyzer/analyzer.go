@@ -3,10 +3,9 @@ package analyzer
 import (
 	"go/ast"
 
-	"github.com/manuelarte/funcorder/internal/features"
-
 	"golang.org/x/tools/go/analysis"
 
+	"github.com/manuelarte/funcorder/internal/features"
 	"github.com/manuelarte/funcorder/internal/fileprocessor"
 )
 
