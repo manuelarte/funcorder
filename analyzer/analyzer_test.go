@@ -25,8 +25,8 @@ func TestAnalyzer(t *testing.T) {
 			},
 		},
 		{
-			desc:     "constructor method check only",
-			patterns: "constructor-method-check",
+			desc:     "method check only",
+			patterns: "struct-method-check",
 			options: map[string]string{
 				constructorCheckName:  "false",
 				structMethodCheckName: "true",
