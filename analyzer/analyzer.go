@@ -12,8 +12,8 @@ import (
 )
 
 const (
-	constructorCheckName  = "constructor"
-	structMethodCheckName = "struct-method"
+	ConstructorCheckName  = "constructor"
+	StructMethodCheckName = "struct-method"
 )
 
 func NewAnalyzer() *analysis.Analyzer {
@@ -26,9 +26,9 @@ func NewAnalyzer() *analysis.Analyzer {
 		Requires: []*analysis.Analyzer{inspect.Analyzer},
 	}
 
-	a.Flags.BoolVar(&f.constructorCheck, constructorCheckName, true,
+	a.Flags.BoolVar(&f.constructorCheck, ConstructorCheckName, true,
 		"Enable/disable feature to check constructors are placed after struct declaration")
-	a.Flags.BoolVar(&f.structMethodCheck, structMethodCheckName, true,
+	a.Flags.BoolVar(&f.structMethodCheck, StructMethodCheckName, true,
 		"Enable/disable feature to check whether the exported struct's methods "+
 			"are placed before the non-exported")
 
