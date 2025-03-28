@@ -14,22 +14,22 @@ func TestAll(t *testing.T) {
 
 func TestConstructorCheckOnly(t *testing.T) {
 	a := analyzer.NewAnalyzer()
-	if err := a.Flags.Set("constructors_check", "true"); err != nil {
+	if err := a.Flags.Set("constructor-check", "true"); err != nil {
 		t.Fatal(err)
 	}
-	if err := a.Flags.Set("struct_methods_check", "false"); err != nil {
+	if err := a.Flags.Set("struct-methods-check", "false"); err != nil {
 		t.Fatal(err)
 	}
-	analysistest.Run(t, analysistest.TestData(), a, "constructor_check")
+	analysistest.Run(t, analysistest.TestData(), a, "constructor-check")
 }
 
 func TestStructMethodsCheckOnly(t *testing.T) {
 	a := analyzer.NewAnalyzer()
-	if err := a.Flags.Set("constructors_check", "false"); err != nil {
+	if err := a.Flags.Set("constructor-check", "false"); err != nil {
 		t.Fatal(err)
 	}
-	if err := a.Flags.Set("struct_methods_check", "true"); err != nil {
+	if err := a.Flags.Set("struct-methods-check", "true"); err != nil {
 		t.Fatal(err)
 	}
-	analysistest.Run(t, analysistest.TestData(), a, "struct_methods_check")
+	analysistest.Run(t, analysistest.TestData(), a, "struct-methods-check")
 }

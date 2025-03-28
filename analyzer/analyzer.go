@@ -17,9 +17,9 @@ func NewAnalyzer() *analysis.Analyzer {
 		Doc:  "checks the order of functions, methods, and constructors",
 		Run:  f.run,
 	}
-	a.Flags.BoolVar(&f.constructorsCheck, "constructors_check", true,
+	a.Flags.BoolVar(&f.constructorCheck, "constructor-check", true,
 		"enable/disable feature to check constructors are placed after struct declaration")
-	a.Flags.BoolVar(&f.structMethodsCheck, "struct_methods_check", true,
+	a.Flags.BoolVar(&f.structMethodsCheck, "struct-methods-check", true,
 		"enable/disable feature to check whether the exported struct's methods "+
 			"are placed before the non-exported")
 
@@ -27,13 +27,13 @@ func NewAnalyzer() *analysis.Analyzer {
 }
 
 type funcorder struct {
-	constructorsCheck  bool
+	constructorCheck   bool
 	structMethodsCheck bool
 }
 
 func (f *funcorder) run(pass *analysis.Pass) (any, error) {
 	var enabledCheckers features.Feature
-	if f.constructorsCheck {
+	if f.constructorCheck {
 		enabledCheckers |= features.ConstructorCheck
 	}
 	if f.structMethodsCheck {

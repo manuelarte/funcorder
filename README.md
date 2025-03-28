@@ -18,7 +18,11 @@ Install FuncOrder linter using
 
 And then use it with
 
-> funcorder ./...
+> funcorder [--constructor-check true|false] [--struct-methods-check true|false] ./...
+
+Parameters:
+* constructor-check: `true|false` (default `true`) enable|disable check constructor is placed after struct declaration and before struct's methods.
+* struct-methods-check: `true|false` (default `true`) enable|disable check exported struct's methods are declared before non-exported.
 
 ## 🚀 Features
 
