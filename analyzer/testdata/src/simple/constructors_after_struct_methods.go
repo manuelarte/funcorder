@@ -1,6 +1,5 @@
 package simple
 
-//nolint:recvcheck // testing linter
 type MyStruct2 struct {
 	Name string
 }
@@ -13,7 +12,6 @@ func (m *MyStruct2) SetName(name string) {
 	m.Name = name
 }
 
-//nolint:nonamedreturns // testing linter
 func NewOtherMyStruct2() (m *MyStruct2) { // want `constructor \"NewOtherMyStruct2\" for struct \"MyStruct2\" should be placed before struct method \"GetName\"`
 	m = &MyStruct2{Name: "John"}
 	return

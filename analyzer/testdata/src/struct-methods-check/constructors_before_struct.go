@@ -1,6 +1,5 @@
 package simple
 
-//nolint:nonamedreturns // testing linter
 func NewOtherMyStruct() (m *MyStruct) {
 	m = &MyStruct{Name: "John"}
 	return
@@ -14,7 +13,6 @@ func MustMyStruct() *MyStruct {
 	return NewMyStruct()
 }
 
-//nolint:recvcheck // testing linter
 type MyStruct struct {
 	Name string
 }
