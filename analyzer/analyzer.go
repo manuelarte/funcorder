@@ -38,23 +38,25 @@ func (f *funcorder) run(pass *analysis.Pass) (any, error) {
 	if f.structMethodCheck {
 		enabledCheckers |= features.StructMethodCheck
 	}
+
 	fp := fileprocessor.NewFileProcessor(enabledCheckers)
+
 	for _, file := range pass.Files {
 		ast.Inspect(file, func(n ast.Node) bool {
 			if _, ok := n.(*ast.File); ok {
-				errs := fp.Analyze()
-				for _, err := range errs {
-					pass.Report(analysis.Diagnostic{Pos: err.GetPos(), Message: err.Error()})
+				for _, report := range fp.Analyze() {
+					pass.Report(report)
 				}
 			}
-			continueChild := fp.Process(n)
-			return continueChild
+
+			return fp.Process(n)
 		})
 	}
-	errs := fp.Analyze()
-	for _, err := range errs {
-		pass.Report(analysis.Diagnostic{Pos: err.GetPos(), Message: err.Error()})
+
+	for _, report := range fp.Analyze() {
+		pass.Report(report)
 	}
+
 	//nolint:nilnil //any, error
 	return nil, nil
 }

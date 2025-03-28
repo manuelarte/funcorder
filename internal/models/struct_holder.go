@@ -1,10 +1,13 @@
 package models
 
 import (
+	"cmp"
 	"go/ast"
-	"sort"
+	"slices"
 
-	"github.com/manuelarte/funcorder/internal/errors"
+	"golang.org/x/tools/go/analysis"
+
+	"github.com/manuelarte/funcorder/internal/diag"
 	"github.com/manuelarte/funcorder/internal/features"
 )
 
@@ -29,27 +32,25 @@ func (sh *StructHolder) AddMethod(fn *ast.FuncDecl) {
 }
 
 //nolint:gocognit,nestif // refactor later
-func (sh *StructHolder) Analyze() []errors.LinterError {
+func (sh *StructHolder) Analyze() []analysis.Diagnostic {
 	// TODO maybe sort constructors and then report also, like NewXXX before MustXXX
-	var errs []errors.LinterError
-	sort.Slice(sh.StructMethods, func(i, j int) bool {
-		return sh.StructMethods[i].Pos() < sh.StructMethods[j].Pos()
+
+	slices.SortFunc(sh.StructMethods, func(a, b *ast.FuncDecl) int {
+		return cmp.Compare(a.Pos(), b.Pos())
 	})
+
+	var reports []analysis.Diagnostic
+
 	structPos := sh.Struct.Pos()
+
 	if sh.Features.IsEnabled(features.ConstructorCheck) {
 		for _, c := range sh.Constructors {
 			if c.Pos() < structPos {
-				errs = append(errs, errors.ConstructorNotAfterStructTypeError{
-					Struct:      sh.Struct,
-					Constructor: c,
-				})
+				reports = append(reports, diag.NewConstructorNotAfterStructType(sh.Struct, c))
 			}
+
 			if len(sh.StructMethods) > 0 && c.Pos() > sh.StructMethods[0].Pos() {
-				errs = append(errs, errors.ConstructorNotBeforeStructMethodsError{
-					Struct:      sh.Struct,
-					Constructor: c,
-					Method:      sh.StructMethods[0],
-				})
+				reports = append(reports, diag.NewConstructorNotBeforeStructMethod(sh.Struct, c, sh.StructMethods[0]))
 			}
 		}
 	}
@@ -70,16 +71,12 @@ func (sh *StructHolder) Analyze() []errors.LinterError {
 		if lastExportedMethod != nil {
 			for _, m := range sh.StructMethods {
 				if !m.Name.IsExported() && m.Pos() < lastExportedMethod.Pos() {
-					errs = append(errs, errors.PrivateMethodBeforePublicForStructTypeError{
-						Struct:        sh.Struct,
-						PrivateMethod: m,
-						PublicMethod:  lastExportedMethod,
-					})
+					reports = append(reports, diag.NewPrivateMethodBeforePublicForStructType(sh.Struct, m, lastExportedMethod))
 				}
 			}
 		}
 	}
 
 	// TODO also check that the methods are declared after the struct
-	return errs
+	return reports
 }
