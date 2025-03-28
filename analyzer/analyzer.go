@@ -4,6 +4,8 @@ import (
 	"go/ast"
 
 	"golang.org/x/tools/go/analysis"
+	"golang.org/x/tools/go/analysis/passes/inspect"
+	"golang.org/x/tools/go/ast/inspector"
 
 	"github.com/manuelarte/funcorder/internal/features"
 	"github.com/manuelarte/funcorder/internal/fileprocessor"
@@ -12,9 +14,10 @@ import (
 func NewAnalyzer() *analysis.Analyzer {
 	f := funcorder{}
 	a := &analysis.Analyzer{
-		Name: "funcorder",
-		Doc:  "checks the order of functions, methods, and constructors",
-		Run:  f.run,
+		Name:     "funcorder",
+		Doc:      "checks the order of functions, methods, and constructors",
+		Run:      f.run,
+		Requires: []*analysis.Analyzer{inspect.Analyzer},
 	}
 	a.Flags.BoolVar(&f.constructorCheck, "constructor-check", true,
 		"enable/disable feature to check constructors are placed after struct declaration")
@@ -41,17 +44,27 @@ func (f *funcorder) run(pass *analysis.Pass) (any, error) {
 
 	fp := fileprocessor.NewFileProcessor(enabledCheckers)
 
-	for _, file := range pass.Files {
-		ast.Inspect(file, func(n ast.Node) bool {
-			if _, ok := n.(*ast.File); ok {
-				for _, report := range fp.Analyze() {
-					pass.Report(report)
-				}
-			}
-
-			return fp.Process(n)
-		})
+	insp, found := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
+	if !found {
+		//nolint:nilnil // impossible case.
+		return nil, nil
 	}
+
+	nodeFilter := []ast.Node{
+		(*ast.File)(nil),
+		(*ast.FuncDecl)(nil),
+		(*ast.TypeSpec)(nil),
+	}
+
+	insp.Preorder(nodeFilter, func(n ast.Node) {
+		if _, ok := n.(*ast.File); ok {
+			for _, report := range fp.Analyze() {
+				pass.Report(report)
+			}
+		}
+
+		fp.Process(n)
+	})
 
 	for _, report := range fp.Analyze() {
 		pass.Report(report)
