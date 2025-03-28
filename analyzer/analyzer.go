@@ -64,13 +64,20 @@ func (f *funcorder) run(pass *analysis.Pass) (any, error) {
 	}
 
 	insp.Preorder(nodeFilter, func(n ast.Node) {
-		if _, ok := n.(*ast.File); ok {
+		switch node := n.(type) {
+		case *ast.File:
 			for _, report := range fp.Analyze() {
 				pass.Report(report)
 			}
-		}
 
-		fp.Process(n)
+			fp.NewFileNode(node)
+
+		case *ast.FuncDecl:
+			fp.NewFuncDecl(node)
+
+		case *ast.TypeSpec:
+			fp.NewTypeSpec(node)
+		}
 	})
 
 	for _, report := range fp.Analyze() {

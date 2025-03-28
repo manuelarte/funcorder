@@ -24,25 +24,6 @@ func NewFileProcessor(checkers features.Feature) *FileProcessor {
 	}
 }
 
-// Process the ast node. It keeps track of the structs and their "constructors" and methods.
-func (fp *FileProcessor) Process(n ast.Node) bool {
-	switch castedN := n.(type) {
-	case *ast.File:
-		fp.newFileNode(castedN)
-		return true
-
-	case *ast.FuncDecl:
-		fp.newFuncDecl(castedN)
-		return false
-
-	case *ast.TypeSpec:
-		fp.newTypeSpec(castedN)
-		return false
-	}
-
-	return true
-}
-
 // Analyze check whether the order of the methods in the constructor is correct.
 func (fp *FileProcessor) Analyze() []analysis.Diagnostic {
 	var reports []analysis.Diagnostic
@@ -68,11 +49,11 @@ func (fp *FileProcessor) addMethod(st string, n *ast.FuncDecl) {
 	sh.AddMethod(n)
 }
 
-func (fp *FileProcessor) newFileNode(_ *ast.File) {
+func (fp *FileProcessor) NewFileNode(_ *ast.File) {
 	fp.structs = make(map[string]*models.StructHolder)
 }
 
-func (fp *FileProcessor) newFuncDecl(n *ast.FuncDecl) {
+func (fp *FileProcessor) NewFuncDecl(n *ast.FuncDecl) {
 	if sc, isSC := models.NewStructConstructor(n); isSC {
 		fp.addConstructor(sc)
 	} else if st, isMethod := astutils.FuncIsMethod(n); isMethod {
@@ -80,7 +61,7 @@ func (fp *FileProcessor) newFuncDecl(n *ast.FuncDecl) {
 	}
 }
 
-func (fp *FileProcessor) newTypeSpec(n *ast.TypeSpec) {
+func (fp *FileProcessor) NewTypeSpec(n *ast.TypeSpec) {
 	sh := fp.getOrCreate(n.Name.Name)
 	sh.Struct = n
 }
