@@ -9,6 +9,10 @@ tidy: ## Run go mod tidy in all directories
 	go mod tidy
 .PHONY: tidy
 
+build: ## Build
+	go build .
+.PHONY: tidy
+
 t: test
 test: ## Run unit tests, alias: t
 	go test --cover -timeout=300s -parallel=16 ./...

@@ -12,16 +12,21 @@ type StructConstructor struct {
 }
 
 func NewStructConstructor(funcDec *ast.FuncDecl) (StructConstructor, bool) {
-	if astutils.FuncCanBeConstructor(funcDec) {
-		expr := funcDec.Type.Results.List[0].Type
-		if returnType, ok := astutils.GetIdent(expr); ok {
-			return StructConstructor{
-				constructor:  funcDec,
-				structReturn: returnType,
-			}, true
-		}
+	if !astutils.FuncCanBeConstructor(funcDec) {
+		return StructConstructor{}, false
 	}
-	return StructConstructor{}, false
+
+	expr := funcDec.Type.Results.List[0].Type
+
+	returnType, ok := astutils.GetIdent(expr)
+	if !ok {
+		return StructConstructor{}, false
+	}
+
+	return StructConstructor{
+		constructor:  funcDec,
+		structReturn: returnType,
+	}, true
 }
 
 // GetStructReturn Return the struct linked to this "constructor".

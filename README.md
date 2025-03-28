@@ -16,16 +16,20 @@ Go Linter to check Functions/Methods Order.
 
 Install FuncOrder linter using
 
-> go install github.com/manuelarte/funcorder@latest
+```bash
+go install github.com/manuelarte/funcorder@latest
+```
 
 And then use it with
 
-> funcorder [-constructor-check=true|false] [-struct-method-check=true|false] ./...
+```
+funcorder [-constructor=true|false] [-struct-method=true|false] ./...
+```
 
 Parameters:
 
-- `constructor-check`: `true|false` (default `true`) Check that constructor is placed after struct declaration and before struct's methods.
-- `struct-method-check`: `true|false` (default `true`) Check that exported struct's methods are declared before non-exported.
+- `constructor`: `true|false` (default `true`) Check that constructor is placed after struct declaration and before struct's methods.
+- `struct-method`: `true|false` (default `true`) Check that exported struct's methods are declared before non-exported.
 
 ## 🚀 Features
 

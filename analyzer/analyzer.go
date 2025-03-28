@@ -4,22 +4,32 @@ import (
 	"go/ast"
 
 	"golang.org/x/tools/go/analysis"
+	"golang.org/x/tools/go/analysis/passes/inspect"
+	"golang.org/x/tools/go/ast/inspector"
 
 	"github.com/manuelarte/funcorder/internal/features"
 	"github.com/manuelarte/funcorder/internal/fileprocessor"
 )
 
+const (
+	constructorCheckName  = "constructor"
+	structMethodCheckName = "struct-method"
+)
+
 func NewAnalyzer() *analysis.Analyzer {
 	f := funcorder{}
+
 	a := &analysis.Analyzer{
-		Name: "funcorder",
-		Doc:  "checks the order of functions, methods, and constructors",
-		Run:  f.run,
+		Name:     "funcorder",
+		Doc:      "checks the order of functions, methods, and constructors",
+		Run:      f.run,
+		Requires: []*analysis.Analyzer{inspect.Analyzer},
 	}
-	a.Flags.BoolVar(&f.constructorCheck, "constructor-check", true,
-		"enable/disable feature to check constructors are placed after struct declaration")
-	a.Flags.BoolVar(&f.structMethodCheck, "struct-method-check", true,
-		"enable/disable feature to check whether the exported struct's methods "+
+
+	a.Flags.BoolVar(&f.constructorCheck, constructorCheckName, true,
+		"Enable/disable feature to check constructors are placed after struct declaration")
+	a.Flags.BoolVar(&f.structMethodCheck, structMethodCheckName, true,
+		"Enable/disable feature to check whether the exported struct's methods "+
 			"are placed before the non-exported")
 
 	return a
@@ -35,26 +45,46 @@ func (f *funcorder) run(pass *analysis.Pass) (any, error) {
 	if f.constructorCheck {
 		enabledCheckers |= features.ConstructorCheck
 	}
+
 	if f.structMethodCheck {
 		enabledCheckers |= features.StructMethodCheck
 	}
+
 	fp := fileprocessor.NewFileProcessor(enabledCheckers)
-	for _, file := range pass.Files {
-		ast.Inspect(file, func(n ast.Node) bool {
-			if _, ok := n.(*ast.File); ok {
-				errs := fp.Analyze()
-				for _, err := range errs {
-					pass.Report(analysis.Diagnostic{Pos: err.GetPos(), Message: err.Error()})
-				}
+
+	insp, found := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
+	if !found {
+		//nolint:nilnil // impossible case.
+		return nil, nil
+	}
+
+	nodeFilter := []ast.Node{
+		(*ast.File)(nil),
+		(*ast.FuncDecl)(nil),
+		(*ast.TypeSpec)(nil),
+	}
+
+	insp.Preorder(nodeFilter, func(n ast.Node) {
+		switch node := n.(type) {
+		case *ast.File:
+			for _, report := range fp.Analyze() {
+				pass.Report(report)
 			}
-			continueChild := fp.Process(n)
-			return continueChild
-		})
+
+			fp.NewFileNode(node)
+
+		case *ast.FuncDecl:
+			fp.NewFuncDecl(node)
+
+		case *ast.TypeSpec:
+			fp.NewTypeSpec(node)
+		}
+	})
+
+	for _, report := range fp.Analyze() {
+		pass.Report(report)
 	}
-	errs := fp.Analyze()
-	for _, err := range errs {
-		pass.Report(analysis.Diagnostic{Pos: err.GetPos(), Message: err.Error()})
-	}
+
 	//nolint:nilnil //any, error
 	return nil, nil
 }
