@@ -11,18 +11,25 @@ import (
 	"github.com/manuelarte/funcorder/internal/fileprocessor"
 )
 
+const (
+	constructorCheckName  = "constructor"
+	structMethodCheckName = "struct-method"
+)
+
 func NewAnalyzer() *analysis.Analyzer {
 	f := funcorder{}
+
 	a := &analysis.Analyzer{
 		Name:     "funcorder",
 		Doc:      "checks the order of functions, methods, and constructors",
 		Run:      f.run,
 		Requires: []*analysis.Analyzer{inspect.Analyzer},
 	}
-	a.Flags.BoolVar(&f.constructorCheck, "constructor-check", true,
-		"enable/disable feature to check constructors are placed after struct declaration")
-	a.Flags.BoolVar(&f.structMethodCheck, "struct-method-check", true,
-		"enable/disable feature to check whether the exported struct's methods "+
+
+	a.Flags.BoolVar(&f.constructorCheck, constructorCheckName, true,
+		"Enable/disable feature to check constructors are placed after struct declaration")
+	a.Flags.BoolVar(&f.structMethodCheck, structMethodCheckName, true,
+		"Enable/disable feature to check whether the exported struct's methods "+
 			"are placed before the non-exported")
 
 	return a
