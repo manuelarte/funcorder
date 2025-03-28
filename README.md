@@ -21,8 +21,8 @@ And then use it with
 > funcorder [-constructor-check=true|false] [-struct-method-check=true|false] ./...
 
 Parameters:
-* constructor-check: `true|false` (default `true`) enable|disable check constructor is placed after struct declaration and before struct's methods.
-* struct-method-check: `true|false` (default `true`) enable|disable check exported struct's methods are declared before non-exported.
+* `constructor-check`: `true|false` (default `true`) enable|disable check constructor is placed after struct declaration and before struct's methods.
+* `struct-method-check`: `true|false` (default `true`) enable|disable check exported struct's methods are declared before non-exported.
 
 ## 🚀 Features
 

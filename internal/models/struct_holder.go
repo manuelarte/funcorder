@@ -4,9 +4,8 @@ import (
 	"go/ast"
 	"sort"
 
-	"github.com/manuelarte/funcorder/internal/features"
-
 	"github.com/manuelarte/funcorder/internal/errors"
+	"github.com/manuelarte/funcorder/internal/features"
 )
 
 // StructHolder contains all the information around a Go struct.
