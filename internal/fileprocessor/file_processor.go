@@ -1,8 +1,9 @@
 package fileprocessor
 
 import (
-	"github.com/manuelarte/funcorder/internal/features"
 	"go/ast"
+
+	"github.com/manuelarte/funcorder/internal/features"
 
 	"github.com/manuelarte/funcorder/internal/astutils"
 	"github.com/manuelarte/funcorder/internal/errors"
