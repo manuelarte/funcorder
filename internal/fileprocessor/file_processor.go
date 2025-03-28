@@ -39,8 +39,7 @@ func (fp *FileProcessor) Analyze() []analysis.Diagnostic {
 }
 
 func (fp *FileProcessor) addConstructor(sc models.StructConstructor) {
-	structReturn := sc.GetStructReturn()
-	sh := fp.getOrCreate(structReturn.Name)
+	sh := fp.getOrCreate(sc.GetStructReturn().Name)
 	sh.AddConstructor(sc.GetConstructor())
 }
 
@@ -54,9 +53,12 @@ func (fp *FileProcessor) NewFileNode(_ *ast.File) {
 }
 
 func (fp *FileProcessor) NewFuncDecl(n *ast.FuncDecl) {
-	if sc, isSC := models.NewStructConstructor(n); isSC {
+	if sc, ok := models.NewStructConstructor(n); ok {
 		fp.addConstructor(sc)
-	} else if st, isMethod := astutils.FuncIsMethod(n); isMethod {
+		return
+	}
+
+	if st, ok := astutils.FuncIsMethod(n); ok {
 		fp.addMethod(st.Name, n)
 	}
 }
@@ -73,5 +75,6 @@ func (fp *FileProcessor) getOrCreate(structName string) *models.StructHolder {
 
 	created := &models.StructHolder{Features: fp.features}
 	fp.structs[structName] = created
+
 	return created
 }

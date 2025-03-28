@@ -45,6 +45,7 @@ func (f *funcorder) run(pass *analysis.Pass) (any, error) {
 	if f.constructorCheck {
 		enabledCheckers |= features.ConstructorCheck
 	}
+
 	if f.structMethodCheck {
 		enabledCheckers |= features.StructMethodCheck
 	}

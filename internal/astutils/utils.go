@@ -9,16 +9,18 @@ func FuncCanBeConstructor(n *ast.FuncDecl) bool {
 	if !n.Name.IsExported() || n.Recv != nil {
 		return false
 	}
+
 	if n.Type.Results == nil || len(n.Type.Results.List) == 0 {
 		return false
 	}
-	expectedConstructorPrefixes := []string{"new", "must"}
-	for _, expectedConstructorPrefix := range expectedConstructorPrefixes {
-		if strings.HasPrefix(strings.ToLower(n.Name.Name), expectedConstructorPrefix) &&
-			len(n.Name.Name) > len(expectedConstructorPrefix) {
+
+	for _, prefix := range []string{"new", "must"} {
+		if strings.HasPrefix(strings.ToLower(n.Name.Name), prefix) &&
+			len(n.Name.Name) > len(prefix) { // TODO(ldez): bug if the name is just `New`.
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -26,9 +28,11 @@ func FuncIsMethod(n *ast.FuncDecl) (*ast.Ident, bool) {
 	if n.Recv == nil {
 		return nil, false
 	}
+
 	if len(n.Recv.List) != 1 {
 		return nil, false
 	}
+
 	if recv, ok := GetIdent(n.Recv.List[0].Type); ok {
 		return recv, true
 	}
@@ -37,11 +41,14 @@ func FuncIsMethod(n *ast.FuncDecl) (*ast.Ident, bool) {
 }
 
 func GetIdent(expr ast.Expr) (*ast.Ident, bool) {
-	if pointerExpr, isPointerExpr := expr.(*ast.StarExpr); isPointerExpr {
-		return GetIdent(pointerExpr.X)
+	switch exp := expr.(type) {
+	case *ast.StarExpr:
+		return GetIdent(exp.X)
+
+	case *ast.Ident:
+		return exp, true
+
+	default:
+		return nil, false
 	}
-	if structExpr, isStructExpr := expr.(*ast.Ident); isStructExpr {
-		return structExpr, true
-	}
-	return nil, false
 }

@@ -15,10 +15,13 @@ import (
 type StructHolder struct {
 	// The features to be analyzed
 	Features features.Feature
+
 	// The struct declaration
 	Struct *ast.TypeSpec
+
 	// A Struct constructor is considered if starts with `New...` and the 1st output parameter is a struct
 	Constructors []*ast.FuncDecl
+
 	// Struct methods
 	StructMethods []*ast.FuncDecl
 }
@@ -41,9 +44,9 @@ func (sh *StructHolder) Analyze() []analysis.Diagnostic {
 
 	var reports []analysis.Diagnostic
 
-	structPos := sh.Struct.Pos()
-
 	if sh.Features.IsEnabled(features.ConstructorCheck) {
+		structPos := sh.Struct.Pos()
+
 		for _, c := range sh.Constructors {
 			if c.Pos() < structPos {
 				reports = append(reports, diag.NewConstructorNotAfterStructType(sh.Struct, c))
@@ -57,22 +60,28 @@ func (sh *StructHolder) Analyze() []analysis.Diagnostic {
 
 	if sh.Features.IsEnabled(features.StructMethodCheck) {
 		var lastExportedMethod *ast.FuncDecl
+
 		for _, m := range sh.StructMethods {
-			if m.Name.IsExported() {
-				if lastExportedMethod == nil {
-					lastExportedMethod = m
-				}
-				if lastExportedMethod.Pos() < m.Pos() {
-					lastExportedMethod = m
-				}
+			if !m.Name.IsExported() {
+				continue
+			}
+
+			if lastExportedMethod == nil {
+				lastExportedMethod = m
+			}
+
+			if lastExportedMethod.Pos() < m.Pos() {
+				lastExportedMethod = m
 			}
 		}
 
 		if lastExportedMethod != nil {
 			for _, m := range sh.StructMethods {
-				if !m.Name.IsExported() && m.Pos() < lastExportedMethod.Pos() {
-					reports = append(reports, diag.NewPrivateMethodBeforePublicForStructType(sh.Struct, m, lastExportedMethod))
+				if m.Name.IsExported() || m.Pos() >= lastExportedMethod.Pos() {
+					continue
 				}
+
+				reports = append(reports, diag.NewPrivateMethodBeforePublicForStructType(sh.Struct, m, lastExportedMethod))
 			}
 		}
 	}
