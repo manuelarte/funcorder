@@ -3,7 +3,7 @@ name: golangci-lint
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
 
 permissions:
@@ -17,7 +17,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        go: [ oldstable, stable ]
+        go: [oldstable, stable]
         os: [ubuntu-latest, macos-latest]
     steps:
       - uses: actions/checkout@v4

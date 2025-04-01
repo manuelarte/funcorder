@@ -16,19 +16,19 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        go: [ oldstable, stable ]
+        go: [oldstable, stable]
         os: [ubuntu-latest, macos-latest]
     steps:
-    - uses: actions/checkout@v4
-    - uses: actions/setup-go@v5
-      with:
-        go-version: ${{ matrix.go }}
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go }}
 
-    - name: Build
-      run: go build -v ./...
+      - name: Build
+        run: go build -v ./...
 
-    - name: Test
-      run: go test ./... -coverprofile=./cover.out -covermode=atomic -coverpkg=./...
+      - name: Test
+        run: go test ./... -coverprofile=./cover.out -covermode=atomic -coverpkg=./...
   spell:
     name: "Spell check"
     runs-on: ubuntu-latest
