@@ -28,3 +28,28 @@ jobs:
 
     - name: Test
       run: go test ./... -coverprofile=./cover.out -covermode=atomic -coverpkg=./...
+  spell:
+    name: "Spell check"
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: codespell-project/actions-codespell@v2
+        with:
+          check_filenames: true
+          check_hidden: true
+          # by default, codespell uses configuration from the .codespellrc
+  typos:
+    # https://github.com/crate-ci/typos
+    # Add exceptions to _typos.toml
+    # install and run locally: cargo install typos-cli && typos
+    name: typos
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Actions Repository
+        uses: actions/checkout@v4
+
+      - name: Check spelling of entire workspace
+        uses: crate-ci/typos@master
