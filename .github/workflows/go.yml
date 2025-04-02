@@ -41,7 +41,6 @@ jobs:
         with:
           check_filenames: true
           check_hidden: true
-          # by default, codespell uses configuration from the .codespellrc
   typos:
     # https://github.com/crate-ci/typos
     # Add exceptions to _typos.toml
@@ -53,4 +52,4 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Check spelling of entire workspace
-        uses: crate-ci/typos@master
+        uses: crate-ci/typos@v1
