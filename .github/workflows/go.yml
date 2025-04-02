@@ -1,3 +1,4 @@
+---
 # This workflow will build a golang project
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
 
@@ -6,7 +7,7 @@ name: Go
 on:
   workflow_dispatch:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
 
 jobs:
@@ -15,16 +16,17 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        go: [ oldstable, stable ]
+        go: [oldstable, stable]
         os: [ubuntu-latest, macos-latest]
     steps:
-    - uses: actions/checkout@v4
-    - uses: actions/setup-go@v5
-      with:
-        go-version: ${{ matrix.go }}
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go }}
 
-    - name: Build
-      run: go build -v ./...
+      - name: Build
+        run: go build -v ./...
 
-    - name: Test
-      run: go test ./... -coverprofile=./cover.out -covermode=atomic -coverpkg=./...
+      - name: Test
+        run: go test ./... -coverprofile=./cover.out -covermode=atomic -coverpkg=./...
+
