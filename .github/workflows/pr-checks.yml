@@ -40,7 +40,7 @@ jobs:
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v7
         with:
-          version: v2.0.2
+          version: v2.1.0
 
   spell:
     name: "Spell check"
