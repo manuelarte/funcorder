@@ -34,17 +34,15 @@ func TestAnalyzer(t *testing.T) {
 				StructMethodCheckName: "false",
 			},
 		},
-		// TODO: Implement the business logic
-		/*		{
-					desc:     "constructor check alphabetical only",
-					patterns: "constructor-check-alphabetical",
-					options: map[string]string{
-						ConstructorCheckName:  "true",
-						StructMethodCheckName: "false",
-						AlphabeticalCheckName: "true",
-					},
-				},
-		*/
+		{
+			desc:     "constructor check alphabetical only",
+			patterns: "constructor-check-alphabetical",
+			options: map[string]string{
+				ConstructorCheckName:  "true",
+				StructMethodCheckName: "false",
+				AlphabeticalCheckName: "true",
+			},
+		},
 		{
 			desc:     "method check only",
 			patterns: "struct-method-check",

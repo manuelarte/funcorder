@@ -47,13 +47,19 @@ func (sh *StructHolder) Analyze() []analysis.Diagnostic {
 	if sh.Features.IsEnabled(features.ConstructorCheck) {
 		structPos := sh.Struct.Pos()
 
-		for _, c := range sh.Constructors {
+		for i, c := range sh.Constructors {
 			if c.Pos() < structPos {
 				reports = append(reports, diag.NewConstructorNotAfterStructType(sh.Struct, c))
 			}
 
 			if len(sh.StructMethods) > 0 && c.Pos() > sh.StructMethods[0].Pos() {
 				reports = append(reports, diag.NewConstructorNotBeforeStructMethod(sh.Struct, c, sh.StructMethods[0]))
+			}
+
+			if sh.Features.IsEnabled(features.AlphabeticalCheck) && i < len(sh.Constructors)-1 {
+				if sh.Constructors[i].Name.Name > sh.Constructors[i+1].Name.Name {
+					reports = append(reports, diag.NewAdjacentConstructorsNotSortedAlphabetically(sh.Struct, sh.Constructors[i], sh.Constructors[i+1]))
+				}
 			}
 		}
 	}

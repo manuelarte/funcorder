@@ -8,7 +8,7 @@ func NewOtherGreetings() (m *Greetings) {
 	return
 }
 
-func NewGreetings() *Greetings { // want `constructor \"NewGreetings" should be placed before \"NewOtherGreetings\"`
+func NewGreetings() *Greetings { // want `constructor \"NewGreetings\" for struct \"Greetings\" should be placed before constructor \"NewOtherGreetings\"`
 	return &Greetings{}
 }
 
