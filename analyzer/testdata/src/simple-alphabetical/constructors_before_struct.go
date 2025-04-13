@@ -5,11 +5,11 @@ func NewOtherMyStruct() (m *MyStruct) { // want "should be placed after the stru
 	return
 }
 
-func NewMyStruct() *MyStruct { // want "should be placed after the struct declaration"
+func NewMyStruct() *MyStruct { // want "should be placed after the struct declaration" `constructor \"NewMyStruct\" for struct \"MyStruct\" should be placed before constructor \"NewOtherMyStruct\"`
 	return &MyStruct{Name: "John"}
 }
 
-func MustMyStruct() *MyStruct { // want `function \"MustMyStruct\" for struct \"MyStruct\" should be placed after the struct declaration`
+func MustMyStruct() *MyStruct { // want `function \"MustMyStruct\" for struct \"MyStruct\" should be placed after the struct declaration` `constructor \"MustMyStruct\" for struct \"MyStruct\" should be placed before constructor \"NewMyStruct\"`
 	return NewMyStruct()
 }
 

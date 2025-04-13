@@ -16,16 +16,13 @@ func TestAnalyzer(t *testing.T) {
 			desc:     "all",
 			patterns: "simple",
 		},
-		//TODO: Implement the business logic
-		/*
-			{
-				desc:     "all",
-				patterns: "simple-alphabetical",
-				options: map[string]string{
-					AlphabeticalCheckName:  "true",
-				},
+		{
+			desc:     "all",
+			patterns: "simple-alphabetical",
+			options: map[string]string{
+				AlphabeticalCheckName: "true",
 			},
-		*/
+		},
 		{
 			desc:     "constructor check only",
 			patterns: "constructor-check",
@@ -51,17 +48,15 @@ func TestAnalyzer(t *testing.T) {
 				StructMethodCheckName: "true",
 			},
 		},
-		// TODO: Implement the business logic
-		/*		{
-					desc:     "method check alphabetical only",
-					patterns: "struct-method-check-alphabetical",
-					options: map[string]string{
-						ConstructorCheckName:  "false",
-						StructMethodCheckName: "true",
-						AlphabeticalCheckName: "true",
-					},
-				},
-		*/
+		{
+			desc:     "method check alphabetical only",
+			patterns: "struct-method-check-alphabetical",
+			options: map[string]string{
+				ConstructorCheckName:  "false",
+				StructMethodCheckName: "true",
+				AlphabeticalCheckName: "true",
+			},
+		},
 	}
 
 	for _, test := range testCases {
