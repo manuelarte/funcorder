@@ -7,6 +7,7 @@
 - [🚀 Features](#-features)
   - [Check exported methods are placed before non-exported methods](#check-exported-methods-are-placed-before-non-exported-methods)
   - [Check `Constructors` functions are placed after struct declaration](#check-constructors-functions-are-placed-after-struct-declaration)
+  - [Check Constructors/Methods are sorted alphabetically](#check-constructorsmethods-are-sorted-alphabetically)
 - [Resources](#resources)
 
 Go Linter to check Functions/Methods Order.
