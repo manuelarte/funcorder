@@ -24,6 +24,6 @@ func (m Greetings) hello() string {
 	return "hello"
 }
 
-func (m *Greetings) bye(name string) string { // want `method \"bye" for struct \"Greetings\" should be placed before \"hello\"`
+func (m *Greetings) bye(name string) string { // want `method \"bye\" for struct \"Greetings\" should be placed before \"hello\"`
 	return "bye"
 }

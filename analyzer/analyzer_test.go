@@ -16,6 +16,16 @@ func TestAnalyzer(t *testing.T) {
 			desc:     "all",
 			patterns: "simple",
 		},
+		//TODO: Implement the business logic
+		/*
+			{
+				desc:     "all",
+				patterns: "simple-alphabetical",
+				options: map[string]string{
+					AlphabeticalCheckName:  "true",
+				},
+			},
+		*/
 		{
 			desc:     "constructor check only",
 			patterns: "constructor-check",
