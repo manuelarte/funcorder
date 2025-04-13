@@ -164,8 +164,8 @@ func NewMyStruct() MyStruct {
 ### Check Constructors/Methods are sorted alphabetically
 
 This rule checks:
-- `Constructor` functions are sorted alphabetically (if `constructor` setting is `true`).
-- `Methods` are sorted alphabetically (if `struct-method` setting is `true`) for each group (exported and non-exported).
+- `Constructor` functions are sorted alphabetically (if `constructor` setting/parameter is `true`).
+- `Methods` are sorted alphabetically (if `struct-method` setting/parameter is `true`) for each group (exported and non-exported).
 
 <table>
 <thead><tr><th>❌ Bad</th><th>✅ Good</th></tr></thead>
