@@ -35,7 +35,7 @@ linters:
       # Checks if the exported methods of a structure are placed before the non-exported ones.
       # Default: true
       struct-method: false
-      # Check if the constructors and/or structure methods are sorted alphabetically.
+      # Checks if the constructors and/or structure methods are sorted alphabetically.
       # Default: false
       alphabetical: true
 ```
