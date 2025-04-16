@@ -32,7 +32,7 @@ func NewAnalyzer() *analysis.Analyzer {
 	a.Flags.BoolVar(&f.structMethodCheck, StructMethodCheckName, true,
 		"Checks if the exported methods of a structure are placed before the non-exported ones.")
 	a.Flags.BoolVar(&f.alphabeticalCheck, AlphabeticalCheckName, false,
-		"Check if the constructors and/or structure methods are sorted alphabetically.")
+		"Checks if the constructors and/or structure methods are sorted alphabetically.")
 
 	return a
 }

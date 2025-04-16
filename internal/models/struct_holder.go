@@ -34,7 +34,7 @@ func (sh *StructHolder) AddMethod(fn *ast.FuncDecl) {
 	sh.StructMethods = append(sh.StructMethods, fn)
 }
 
-// Analyze Applies the linter to the struct holder.
+// Analyze applies the linter to the struct holder.
 func (sh *StructHolder) Analyze() []analysis.Diagnostic {
 	// TODO maybe sort constructors and then report also, like NewXXX before MustXXX
 

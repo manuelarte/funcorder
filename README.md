@@ -3,18 +3,21 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/manuelarte/funcorder)](https://goreportcard.com/report/github.com/manuelarte/funcorder)
 ![version](https://img.shields.io/github/v/release/manuelarte/funcorder)
 
-- [⬇️ Getting Started](#-getting-started)
-- [🚀 Features](#-features)
-  - [Check exported methods are placed before non-exported methods](#check-exported-methods-are-placed-before-non-exported-methods)
-  - [Check `Constructors` functions are placed after struct declaration](#check-constructors-functions-are-placed-after-struct-declaration)
-  - [Check Constructors/Methods are sorted alphabetically](#check-constructorsmethods-are-sorted-alphabetically)
-- [Resources](#resources)
+- [🧐 FuncOrder](#-funcorder)
+  - [⬇️ Getting Started](#️-getting-started)
+    - [As A Golangci-lint linter](#as-a-golangci-lint-linter)
+    - [Standalone application](#standalone-application)
+  - [🚀 Features](#-features)
+    - [Check exported methods are placed before non-exported methods](#check-exported-methods-are-placed-before-non-exported-methods)
+    - [Check `Constructors` functions are placed after struct declaration](#check-constructors-functions-are-placed-after-struct-declaration)
+    - [Check Constructors/Methods are sorted alphabetically](#check-constructorsmethods-are-sorted-alphabetically)
+  - [Resources](#resources)
 
 Go Linter to check Functions/Methods Order.
 
 ## ⬇️ Getting Started
 
-### As A Golangci-lint linter
+### As a golangci-lint linter
 
 Define the rules in your `golangci-lint` configuration file, e.g:
 
@@ -37,6 +40,8 @@ linters:
       alphabetical: true
 ```
 
+### Standalone application
+
 Install FuncOrder linter using
 
 ```bash
@@ -53,7 +58,7 @@ Parameters:
 
 - `constructor`: `true|false` (default `true`) Checks that constructors are placed after the structure declaration.
 - `struct-method`: `true|false` (default `true`) Checks if the exported methods of a structure are placed before the non-exported ones.
-- `alphabetical`: `true|false` (default `false`) Check if the constructors and/or structure methods are sorted alphabetically.
+- `alphabetical`: `true|false` (default `false`) Checks if the constructors and/or structure methods are sorted alphabetically.
 
 ## 🚀 Features
 
@@ -164,6 +169,7 @@ func NewMyStruct() MyStruct {
 ### Check Constructors/Methods are sorted alphabetically
 
 This rule checks:
+
 - `Constructor` functions are sorted alphabetically (if `constructor` setting/parameter is `true`).
 - `Methods` are sorted alphabetically (if `struct-method` setting/parameter is `true`) for each group (exported and non-exported).
 
@@ -198,7 +204,7 @@ func (m MyStruct) GoodAfternoon() string {
 }
 
 func (m MyStruct) hello() string {
-	return "hello"
+ return "hello"
 }
 
 // ❌ method "bye" should be placed 
