@@ -58,23 +58,21 @@ func (sh *StructHolder) Analyze() []analysis.Diagnostic {
 
 func (sh *StructHolder) analyzeConstructor() []analysis.Diagnostic {
 	var reports []analysis.Diagnostic
-	structPos := sh.Struct.Pos()
 
-	for i, c := range sh.Constructors {
-		if c.Pos() < structPos {
-			reports = append(reports, diag.NewConstructorNotAfterStructType(sh.Struct, c))
+	for i, constructor := range sh.Constructors {
+		if constructor.Pos() < sh.Struct.Pos() {
+			reports = append(reports, diag.NewConstructorNotAfterStructType(sh.Struct, constructor))
 		}
 
-		if len(sh.StructMethods) > 0 && c.Pos() > sh.StructMethods[0].Pos() {
-			reports = append(reports, diag.NewConstructorNotBeforeStructMethod(sh.Struct, c, sh.StructMethods[0]))
+		if len(sh.StructMethods) > 0 && constructor.Pos() > sh.StructMethods[0].Pos() {
+			reports = append(reports, diag.NewConstructorNotBeforeStructMethod(sh.Struct, constructor, sh.StructMethods[0]))
 		}
 
-		if sh.Features.IsEnabled(features.AlphabeticalCheck) && i < len(sh.Constructors)-1 {
-			if sh.Constructors[i].Name.Name > sh.Constructors[i+1].Name.Name {
-				reports = append(reports,
-					diag.NewAdjacentConstructorsNotSortedAlphabetically(sh.Struct,
-						sh.Constructors[i], sh.Constructors[i+1]))
-			}
+		if sh.Features.IsEnabled(features.AlphabeticalCheck) &&
+			i < len(sh.Constructors)-1 && sh.Constructors[i].Name.Name > sh.Constructors[i+1].Name.Name {
+			reports = append(reports,
+				diag.NewAdjacentConstructorsNotSortedAlphabetically(sh.Struct, sh.Constructors[i], sh.Constructors[i+1]),
+			)
 		}
 	}
 	return reports
@@ -129,13 +127,15 @@ func filterMethods(funcDecls []*ast.FuncDecl, exported bool) []*ast.FuncDecl {
 	return result
 }
 
-func isSorted(s *ast.TypeSpec, ff []*ast.FuncDecl) []analysis.Diagnostic {
+func isSorted(typeSpec *ast.TypeSpec, funcDecls []*ast.FuncDecl) []analysis.Diagnostic {
 	var reports []analysis.Diagnostic
-	for i := range ff {
-		if i < len(ff)-1 {
-			if ff[i].Name.Name > ff[i+1].Name.Name {
-				reports = append(reports, diag.NewAdjacentStructMethodsNotSortedAlphabetically(s, ff[i], ff[i+1]))
-			}
+	for i := range funcDecls {
+		if i >= len(funcDecls)-1 {
+			continue
+		}
+		if funcDecls[i].Name.Name > funcDecls[i+1].Name.Name {
+			reports = append(reports,
+				diag.NewAdjacentStructMethodsNotSortedAlphabetically(typeSpec, funcDecls[i], funcDecls[i+1]))
 		}
 	}
 	return reports
