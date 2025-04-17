@@ -81,7 +81,6 @@ func (sh *StructHolder) analyzeConstructor() []analysis.Diagnostic {
 }
 
 func (sh *StructHolder) analyzeStructMethod() []analysis.Diagnostic {
-	var reports []analysis.Diagnostic
 	var lastExportedMethod *ast.FuncDecl
 
 	for _, m := range sh.StructMethods {
@@ -98,6 +97,7 @@ func (sh *StructHolder) analyzeStructMethod() []analysis.Diagnostic {
 		}
 	}
 
+	var reports []analysis.Diagnostic
 	if lastExportedMethod != nil {
 		for _, m := range sh.StructMethods {
 			if m.Name.IsExported() || m.Pos() >= lastExportedMethod.Pos() {
@@ -109,23 +109,24 @@ func (sh *StructHolder) analyzeStructMethod() []analysis.Diagnostic {
 	}
 
 	if sh.Features.IsEnabled(features.AlphabeticalCheck) {
-		ef := filterMethods(sh.StructMethods, true)
-		reports = append(reports, isSorted(sh.Struct, ef)...)
-		nef := filterMethods(sh.StructMethods, false)
-		reports = append(reports, isSorted(sh.Struct, nef)...)
+		return slices.Concat(reports,
+			isSorted(sh.Struct, filterMethods(sh.StructMethods, true)),
+			isSorted(sh.Struct, filterMethods(sh.StructMethods, false)),
+		)
 	}
 
 	return reports
 }
 
-func filterMethods(fs []*ast.FuncDecl, isExported bool) []*ast.FuncDecl {
-	var ff []*ast.FuncDecl
-	for _, f := range fs {
-		if f.Name.IsExported() == isExported {
-			ff = append(ff, f)
+func filterMethods(funcDecls []*ast.FuncDecl, exported bool) []*ast.FuncDecl {
+	var result []*ast.FuncDecl
+	for _, f := range funcDecls {
+		if f.Name.IsExported() != exported {
+			continue
 		}
+		result = append(result, f)
 	}
-	return ff
+	return result
 }
 
 func isSorted(s *ast.TypeSpec, ff []*ast.FuncDecl) []analysis.Diagnostic {
