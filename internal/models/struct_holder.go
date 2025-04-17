@@ -130,10 +130,12 @@ func filterMethods(funcDecls []*ast.FuncDecl, exported bool) []*ast.FuncDecl {
 
 func isSorted(typeSpec *ast.TypeSpec, funcDecls []*ast.FuncDecl) []analysis.Diagnostic {
 	var reports []analysis.Diagnostic
+
 	for i := range funcDecls {
 		if i >= len(funcDecls)-1 {
 			continue
 		}
+
 		if funcDecls[i].Name.Name > funcDecls[i+1].Name.Name {
 			reports = append(reports,
 				diag.NewAdjacentStructMethodsNotSortedAlphabetically(typeSpec, funcDecls[i], funcDecls[i+1]))
