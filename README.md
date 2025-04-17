@@ -24,9 +24,9 @@ Define the rules in your `golangci-lint` configuration file, e.g:
 ```yaml
 linters:
   enable:
-    ...
     - funcorder
     ...
+
   settings:
     funcorder:
       # Checks that constructors are placed after the structure declaration.

@@ -124,6 +124,7 @@ func filterMethods(funcDecls []*ast.FuncDecl, exported bool) []*ast.FuncDecl {
 		if f.Name.IsExported() != exported {
 			continue
 		}
+
 		result = append(result, f)
 	}
 
