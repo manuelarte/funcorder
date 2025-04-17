@@ -1,18 +1,46 @@
+# 🧐 FuncOrder
+
 [![Go Report Card](https://goreportcard.com/badge/github.com/manuelarte/funcorder)](https://goreportcard.com/report/github.com/manuelarte/funcorder)
 ![version](https://img.shields.io/github/v/release/manuelarte/funcorder)
 
 - [🧐 FuncOrder](#-funcorder)
-  - [⬇️ Getting Started](#-getting-started)
+  - [⬇️ Getting Started](#️-getting-started)
+    - [As A Golangci-lint linter](#as-a-golangci-lint-linter)
+    - [Standalone application](#standalone-application)
   - [🚀 Features](#-features)
     - [Check exported methods are placed before non-exported methods](#check-exported-methods-are-placed-before-non-exported-methods)
     - [Check `Constructors` functions are placed after struct declaration](#check-constructors-functions-are-placed-after-struct-declaration)
+    - [Check Constructors/Methods are sorted alphabetically](#check-constructorsmethods-are-sorted-alphabetically)
   - [Resources](#resources)
-
-# 🧐 FuncOrder
 
 Go Linter to check Functions/Methods Order.
 
 ## ⬇️ Getting Started
+
+### As a golangci-lint linter
+
+Define the rules in your `golangci-lint` configuration file, e.g:
+
+```yaml
+linters:
+  enable:
+    - funcorder
+    ...
+
+  settings:
+    funcorder:
+      # Checks that constructors are placed after the structure declaration.
+      # Default: true
+      constructor: false
+      # Checks if the exported methods of a structure are placed before the non-exported ones.
+      # Default: true
+      struct-method: false
+      # Checks if the constructors and/or structure methods are sorted alphabetically.
+      # Default: false
+      alphabetical: true
+```
+
+### Standalone application
 
 Install FuncOrder linter using
 
@@ -23,13 +51,14 @@ go install github.com/manuelarte/funcorder@latest
 And then use it with
 
 ```
-funcorder [-constructor=true|false] [-struct-method=true|false] ./...
+funcorder [-constructor=true|false] [-struct-method=true|false] [-alphabetical=true|false] ./...
 ```
 
 Parameters:
 
-- `constructor`: `true|false` (default `true`) Check that constructor is placed after struct declaration and before struct's methods.
-- `struct-method`: `true|false` (default `true`) Check that exported struct's methods are declared before non-exported.
+- `constructor`: `true|false` (default `true`) Checks that constructors are placed after the structure declaration.
+- `struct-method`: `true|false` (default `true`) Checks if the exported methods of a structure are placed before the non-exported ones.
+- `alphabetical`: `true|false` (default `false`) Checks if the constructors and/or structure methods are sorted alphabetically.
 
 ## 🚀 Features
 
@@ -129,6 +158,98 @@ func NewMyStruct() MyStruct {
 }
 
 // other MyStruct's methods
+...
+```
+
+</td></tr>
+
+</tbody>
+</table>
+
+### Check Constructors/Methods are sorted alphabetically
+
+This rule checks:
+
+- `Constructor` functions are sorted alphabetically (if `constructor` setting/parameter is `true`).
+- `Methods` are sorted alphabetically (if `struct-method` setting/parameter is `true`) for each group (exported and non-exported).
+
+<table>
+<thead><tr><th>❌ Bad</th><th>✅ Good</th></tr></thead>
+<tbody>
+<tr><td>
+
+```go
+type MyStruct struct {
+    Name string
+}
+
+func NewMyStruct() MyStruct {
+    return MyStruct{Name: "John"}
+}
+
+// ❌ constructor "NewAMyStruct" should be placed 
+// before "NewMyStruct"
+func NewAMyStruct() MyStruct {
+    return MyStruct{Name: "John"}
+}
+
+func (m MyStruct) GoodMorning() string {
+    return "good morning"
+}
+
+// ❌ method "GoodAfternoon" should be placed 
+// before "GoodMorning"
+func (m MyStruct) GoodAfternoon() string {
+    return "good afternoon"
+}
+
+func (m MyStruct) hello() string {
+ return "hello"
+}
+
+// ❌ method "bye" should be placed 
+// before "hello"
+func (m MyStruct) bye() string {
+    return "bye"
+}
+
+...
+```
+
+</td><td>
+
+```go
+type MyStruct struct {
+    Name string
+}
+
+// ✅ constructors sorted alphabetically
+func NewAMyStruct() MyStruct {
+    return MyStruct{Name: "John"}
+}
+
+func NewMyStruct() MyStruct {
+    return MyStruct{Name: "John"}
+}
+
+// ✅ exported methods sorted alphabetically
+func (m MyStruct) GoodAfternoon() string {
+    return "good afternoon"
+}
+
+func (m MyStruct) GoodMorning() string {
+    return "good morning"
+}
+
+// ✅ non-exported methods sorted alphabetically
+func (m MyStruct) bye() string {
+    return "bye"
+}
+
+func (m MyStruct) hello() string {
+    return "hello"
+}
+
 ...
 ```
 

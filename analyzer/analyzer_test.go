@@ -13,8 +13,15 @@ func TestAnalyzer(t *testing.T) {
 		options  map[string]string
 	}{
 		{
-			desc:     "all",
+			desc:     "default",
 			patterns: "simple",
+		},
+		{
+			desc:     "all options",
+			patterns: "simple-alphabetical",
+			options: map[string]string{
+				AlphabeticalCheckName: "true",
+			},
 		},
 		{
 			desc:     "constructor check only",
@@ -25,11 +32,29 @@ func TestAnalyzer(t *testing.T) {
 			},
 		},
 		{
+			desc:     "constructor check and alphabetical",
+			patterns: "constructor-check-alphabetical",
+			options: map[string]string{
+				ConstructorCheckName:  "true",
+				StructMethodCheckName: "false",
+				AlphabeticalCheckName: "true",
+			},
+		},
+		{
 			desc:     "method check only",
 			patterns: "struct-method-check",
 			options: map[string]string{
 				ConstructorCheckName:  "false",
 				StructMethodCheckName: "true",
+			},
+		},
+		{
+			desc:     "alphabetical method check",
+			patterns: "struct-method-check-alphabetical",
+			options: map[string]string{
+				ConstructorCheckName:  "false",
+				StructMethodCheckName: "true",
+				AlphabeticalCheckName: "true",
 			},
 		},
 	}
