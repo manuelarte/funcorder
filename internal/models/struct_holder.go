@@ -119,12 +119,14 @@ func (sh *StructHolder) analyzeStructMethod() []analysis.Diagnostic {
 
 func filterMethods(funcDecls []*ast.FuncDecl, exported bool) []*ast.FuncDecl {
 	var result []*ast.FuncDecl
+
 	for _, f := range funcDecls {
 		if f.Name.IsExported() != exported {
 			continue
 		}
 		result = append(result, f)
 	}
+
 	return result
 }
 
