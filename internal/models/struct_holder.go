@@ -96,6 +96,7 @@ func (sh *StructHolder) analyzeStructMethod() []analysis.Diagnostic {
 	}
 
 	var reports []analysis.Diagnostic
+
 	if lastExportedMethod != nil {
 		for _, m := range sh.StructMethods {
 			if m.Name.IsExported() || m.Pos() >= lastExportedMethod.Pos() {
