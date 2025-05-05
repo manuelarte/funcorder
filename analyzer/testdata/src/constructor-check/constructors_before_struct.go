@@ -9,7 +9,7 @@ func NewMyStruct() *MyStruct { // want "should be placed after the struct declar
 	return &MyStruct{Name: "John"}
 }
 
-func MustMyStruct() *MyStruct { // want `function \"MustMyStruct\" for struct \"MyStruct\" should be placed after the struct declaration`
+func MustMyStruct() *MyStruct { // want `constructor \"MustMyStruct\" for struct \"MyStruct\" should be placed after the struct declaration`
 	return NewMyStruct()
 }
 
