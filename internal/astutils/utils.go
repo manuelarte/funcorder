@@ -1,7 +1,10 @@
 package astutils
 
 import (
+	"bytes"
 	"go/ast"
+	"go/format"
+	"go/token"
 	"strings"
 )
 
@@ -51,4 +54,12 @@ func GetIdent(expr ast.Expr) (*ast.Ident, bool) {
 	default:
 		return nil, false
 	}
+}
+
+func NodeToByteArray(fset *token.FileSet, node ast.Node) ([]byte, error) {
+	var buf bytes.Buffer
+	if err := format.Node(&buf, fset, node); err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
 }

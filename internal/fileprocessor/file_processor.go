@@ -2,6 +2,7 @@ package fileprocessor
 
 import (
 	"go/ast"
+	"go/token"
 
 	"golang.org/x/tools/go/analysis"
 
@@ -12,30 +13,36 @@ import (
 
 // FileProcessor Holder to store all the functions that are potential to be constructors and all the structs.
 type FileProcessor struct {
+	fset     *token.FileSet
 	structs  map[string]*models.StructHolder
 	features features.Feature
 }
 
 // NewFileProcessor creates a new file processor.
-func NewFileProcessor(checkers features.Feature) *FileProcessor {
+func NewFileProcessor(fset *token.FileSet, checkers features.Feature) *FileProcessor {
 	return &FileProcessor{
+		fset:     fset,
 		structs:  make(map[string]*models.StructHolder),
 		features: checkers,
 	}
 }
 
 // Analyze check whether the order of the methods in the constructor is correct.
-func (fp *FileProcessor) Analyze() []analysis.Diagnostic {
+func (fp *FileProcessor) Analyze() ([]analysis.Diagnostic, error) {
 	var reports []analysis.Diagnostic
 
 	for _, sh := range fp.structs {
 		// filter out structs that are not declared inside that file
 		if sh.Struct != nil {
-			reports = append(reports, sh.Analyze()...)
+			newReports, err := sh.Analyze()
+			if err != nil {
+				return nil, err
+			}
+			reports = append(reports, newReports...)
 		}
 	}
 
-	return reports
+	return reports, nil
 }
 
 func (fp *FileProcessor) NewFileNode(_ *ast.File) {
@@ -73,7 +80,10 @@ func (fp *FileProcessor) getOrCreate(structName string) *models.StructHolder {
 		return holder
 	}
 
-	created := &models.StructHolder{Features: fp.features}
+	created := &models.StructHolder{
+		Fset:     fp.fset,
+		Features: fp.features,
+	}
 	fp.structs[structName] = created
 
 	return created

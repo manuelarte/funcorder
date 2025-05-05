@@ -3,6 +3,7 @@ package models
 import (
 	"cmp"
 	"go/ast"
+	"go/token"
 	"slices"
 
 	"golang.org/x/tools/go/analysis"
@@ -13,6 +14,8 @@ import (
 
 // StructHolder contains all the information around a Go struct.
 type StructHolder struct {
+	// The fileset
+	Fset *token.FileSet
 	// The features to be analyzed
 	Features features.Feature
 
@@ -35,7 +38,7 @@ func (sh *StructHolder) AddMethod(fn *ast.FuncDecl) {
 }
 
 // Analyze applies the linter to the struct holder.
-func (sh *StructHolder) Analyze() []analysis.Diagnostic {
+func (sh *StructHolder) Analyze() ([]analysis.Diagnostic, error) {
 	// TODO maybe sort constructors and then report also, like NewXXX before MustXXX
 
 	slices.SortFunc(sh.StructMethods, func(a, b *ast.FuncDecl) int {
@@ -45,7 +48,11 @@ func (sh *StructHolder) Analyze() []analysis.Diagnostic {
 	var reports []analysis.Diagnostic
 
 	if sh.Features.IsEnabled(features.ConstructorCheck) {
-		reports = append(reports, sh.analyzeConstructor()...)
+		newReports, err := sh.analyzeConstructor()
+		if err != nil {
+			return nil, err
+		}
+		reports = append(reports, newReports...)
 	}
 
 	if sh.Features.IsEnabled(features.StructMethodCheck) {
@@ -53,15 +60,19 @@ func (sh *StructHolder) Analyze() []analysis.Diagnostic {
 	}
 
 	// TODO also check that the methods are declared after the struct
-	return reports
+	return reports, nil
 }
 
-func (sh *StructHolder) analyzeConstructor() []analysis.Diagnostic {
+func (sh *StructHolder) analyzeConstructor() ([]analysis.Diagnostic, error) {
 	var reports []analysis.Diagnostic
 
 	for i, constructor := range sh.Constructors {
 		if constructor.Pos() < sh.Struct.Pos() {
-			reports = append(reports, diag.NewConstructorNotAfterStructType(sh.Struct, constructor))
+			diagnosis, err := diag.NewConstructorNotAfterStructType(sh.Fset, sh.Struct, constructor)
+			if err != nil {
+				return nil, err
+			}
+			reports = append(reports, diagnosis)
 		}
 
 		if len(sh.StructMethods) > 0 && constructor.Pos() > sh.StructMethods[0].Pos() {
@@ -75,7 +86,7 @@ func (sh *StructHolder) analyzeConstructor() []analysis.Diagnostic {
 			)
 		}
 	}
-	return reports
+	return reports, nil
 }
 
 func (sh *StructHolder) analyzeStructMethod() []analysis.Diagnostic {

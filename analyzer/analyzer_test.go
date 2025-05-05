@@ -73,3 +73,35 @@ func TestAnalyzer(t *testing.T) {
 		})
 	}
 }
+
+func TestAnalyzerWithFix(t *testing.T) {
+	testCases := []struct {
+		desc     string
+		patterns string
+		options  map[string]string
+	}{
+		{
+			desc:     "fix constructor",
+			patterns: "fix-constructor",
+			options: map[string]string{
+				ConstructorCheckName:  "true",
+				StructMethodCheckName: "true",
+				AlphabeticalCheckName: "false",
+			},
+		},
+	}
+
+	for _, test := range testCases {
+		t.Run(test.desc, func(t *testing.T) {
+			a := NewAnalyzer()
+
+			for k, v := range test.options {
+				if err := a.Flags.Set(k, v); err != nil {
+					t.Fatal(err)
+				}
+			}
+
+			analysistest.RunWithSuggestedFixes(t, analysistest.TestData(), a, test.patterns)
+		})
+	}
+}

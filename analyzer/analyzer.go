@@ -23,6 +23,7 @@ func NewAnalyzer() *analysis.Analyzer {
 	a := &analysis.Analyzer{
 		Name:     "funcorder",
 		Doc:      "checks the order of functions, methods, and constructors",
+		URL:      "https://github.com/manuelarte/funcorder",
 		Run:      f.run,
 		Requires: []*analysis.Analyzer{inspect.Analyzer},
 	}
@@ -57,7 +58,7 @@ func (f *funcorder) run(pass *analysis.Pass) (any, error) {
 		enabledCheckers.Enable(features.AlphabeticalCheck)
 	}
 
-	fp := fileprocessor.NewFileProcessor(enabledCheckers)
+	fp := fileprocessor.NewFileProcessor(pass.Fset, enabledCheckers)
 
 	insp, found := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
 	if !found {
@@ -71,10 +72,19 @@ func (f *funcorder) run(pass *analysis.Pass) (any, error) {
 		(*ast.TypeSpec)(nil),
 	}
 
+	var errProcessing error
 	insp.Preorder(nodeFilter, func(n ast.Node) {
+		if errProcessing != nil {
+			return
+		}
 		switch node := n.(type) {
 		case *ast.File:
-			for _, report := range fp.Analyze() {
+			reports, analyzeError := fp.Analyze()
+			if analyzeError != nil {
+				errProcessing = analyzeError
+				return
+			}
+			for _, report := range reports {
 				pass.Report(report)
 			}
 
@@ -87,8 +97,15 @@ func (f *funcorder) run(pass *analysis.Pass) (any, error) {
 			fp.NewTypeSpec(node)
 		}
 	})
+	if errProcessing != nil {
+		return nil, errProcessing
+	}
 
-	for _, report := range fp.Analyze() {
+	reports, err := fp.Analyze()
+	if err != nil {
+		return nil, err
+	}
+	for _, report := range reports {
 		pass.Report(report)
 	}
 

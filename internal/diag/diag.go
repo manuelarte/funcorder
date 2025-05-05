@@ -2,17 +2,48 @@ package diag
 
 import (
 	"fmt"
+	"github.com/manuelarte/funcorder/internal/astutils"
 	"go/ast"
+	"go/token"
+	"slices"
 
 	"golang.org/x/tools/go/analysis"
 )
 
-func NewConstructorNotAfterStructType(structSpec *ast.TypeSpec, constructor *ast.FuncDecl) analysis.Diagnostic {
+func NewConstructorNotAfterStructType(fset *token.FileSet, structSpec *ast.TypeSpec, constructor *ast.FuncDecl) (analysis.Diagnostic, error) {
+	suggestedFixConstructorByte, err := astutils.NodeToByteArray(fset, constructor)
+	if err != nil {
+		return analysis.Diagnostic{}, err
+	}
+	removingPos := constructor.Pos()
+	if constructor.Doc != nil {
+		removingPos = constructor.Doc.Pos()
+	}
 	return analysis.Diagnostic{
 		Pos: constructor.Pos(),
-		Message: fmt.Sprintf("function %q for struct %q should be placed after the struct declaration",
+		Message: fmt.Sprintf("constructor %q for struct %q should be placed after the struct declaration",
 			constructor.Name, structSpec.Name),
-	}
+		URL: "https://github.com/manuelarte/funcorder?tab=readme-ov-file#check-constructors-functions-are-placed-after-struct-declaration",
+		SuggestedFixes: []analysis.SuggestedFix{
+			{
+				Message: fmt.Sprintf("The constructor %q should be placed after the struct declaration", constructor.Name),
+				TextEdits: []analysis.TextEdit{
+					{
+						Pos:     removingPos,
+						End:     constructor.End(),
+						NewText: make([]byte, 0),
+					},
+					{
+						Pos: structSpec.Type.End(),
+						End: token.NoPos,
+						NewText: slices.Concat([]byte("\n"),
+							[]byte("\n"),
+							suggestedFixConstructorByte),
+					},
+				},
+			},
+		},
+	}, nil
 }
 
 func NewConstructorNotBeforeStructMethod(
@@ -22,6 +53,7 @@ func NewConstructorNotBeforeStructMethod(
 ) analysis.Diagnostic {
 	return analysis.Diagnostic{
 		Pos: constructor.Pos(),
+		URL: "https://github.com/manuelarte/funcorder?tab=readme-ov-file#check-constructors-functions-are-placed-after-struct-declaration",
 		Message: fmt.Sprintf("constructor %q for struct %q should be placed before struct method %q",
 			constructor.Name, structSpec.Name, method.Name),
 	}
@@ -34,6 +66,7 @@ func NewAdjacentConstructorsNotSortedAlphabetically(
 ) analysis.Diagnostic {
 	return analysis.Diagnostic{
 		Pos: otherConstructorNotSorted.Pos(),
+		URL: "https://github.com/manuelarte/funcorder?tab=readme-ov-file#check-constructorsmethods-are-sorted-alphabetically",
 		Message: fmt.Sprintf("constructor %q for struct %q should be placed before constructor %q",
 			otherConstructorNotSorted.Name, structSpec.Name, constructorNotSorted.Name),
 	}
@@ -46,6 +79,7 @@ func NewNonExportedMethodBeforeExportedForStruct(
 ) analysis.Diagnostic {
 	return analysis.Diagnostic{
 		Pos: privateMethod.Pos(),
+		URL: "https://github.com/manuelarte/funcorder?tab=readme-ov-file#check-exported-methods-are-placed-before-non-exported-methods",
 		Message: fmt.Sprintf("unexported method %q for struct %q should be placed after the exported method %q",
 			privateMethod.Name, structSpec.Name, publicMethod.Name),
 	}
@@ -58,6 +92,7 @@ func NewAdjacentStructMethodsNotSortedAlphabetically(
 ) analysis.Diagnostic {
 	return analysis.Diagnostic{
 		Pos: otherMethod.Pos(),
+		URL: "https://github.com/manuelarte/funcorder?tab=readme-ov-file#check-constructorsmethods-are-sorted-alphabetically",
 		Message: fmt.Sprintf("method %q for struct %q should be placed before method %q",
 			otherMethod.Name, structSpec.Name, method.Name),
 	}
