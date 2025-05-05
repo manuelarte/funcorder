@@ -59,7 +59,7 @@ Parameters:
 - `constructor`: `true|false` (default `true`) Checks that constructors are placed after the structure declaration.
 - `struct-method`: `true|false` (default `true`) Checks if the exported methods of a structure are placed before the non-exported ones.
 - `alphabetical`: `true|false` (default `false`) Checks if the constructors and/or structure methods are sorted alphabetically.
-- `fix`: `true|false` (default `false`) Fix the source code to adhere to the enabled features.
+- `fix`: Fix the source code to adhere to the enabled features.
 
 ## 🚀 Features
 
