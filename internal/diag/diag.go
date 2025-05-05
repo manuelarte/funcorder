@@ -2,15 +2,17 @@ package diag
 
 import (
 	"fmt"
-	"github.com/manuelarte/funcorder/internal/astutils"
 	"go/ast"
 	"go/token"
 	"slices"
 
 	"golang.org/x/tools/go/analysis"
+
+	"github.com/manuelarte/funcorder/internal/astutils"
 )
 
-func NewConstructorNotAfterStructType(fset *token.FileSet, structSpec *ast.TypeSpec, constructor *ast.FuncDecl) (analysis.Diagnostic, error) {
+func NewConstructorNotAfterStructType(fset *token.FileSet,
+	structSpec *ast.TypeSpec, constructor *ast.FuncDecl) (analysis.Diagnostic, error) {
 	suggestedFixConstructorByte, err := astutils.NodeToByteArray(fset, constructor)
 	if err != nil {
 		return analysis.Diagnostic{}, err
@@ -23,7 +25,7 @@ func NewConstructorNotAfterStructType(fset *token.FileSet, structSpec *ast.TypeS
 		Pos: constructor.Pos(),
 		Message: fmt.Sprintf("constructor %q for struct %q should be placed after the struct declaration",
 			constructor.Name, structSpec.Name),
-		URL: "https://github.com/manuelarte/funcorder?tab=readme-ov-file#check-constructors-functions-are-placed-after-struct-declaration",
+		URL: "https://github.com/manuelarte/funcorder?tab=readme-ov-file#check-constructors-functions-are-placed-after-struct-declaration", //nolint: lll // url
 		SuggestedFixes: []analysis.SuggestedFix{
 			{
 				Message: fmt.Sprintf("The constructor %q should be placed after the struct declaration", constructor.Name),
@@ -53,7 +55,7 @@ func NewConstructorNotBeforeStructMethod(
 ) analysis.Diagnostic {
 	return analysis.Diagnostic{
 		Pos: constructor.Pos(),
-		URL: "https://github.com/manuelarte/funcorder?tab=readme-ov-file#check-constructors-functions-are-placed-after-struct-declaration",
+		URL: "https://github.com/manuelarte/funcorder?tab=readme-ov-file#check-constructors-functions-are-placed-after-struct-declaration", //nolint: lll // url
 		Message: fmt.Sprintf("constructor %q for struct %q should be placed before struct method %q",
 			constructor.Name, structSpec.Name, method.Name),
 	}
@@ -79,7 +81,7 @@ func NewNonExportedMethodBeforeExportedForStruct(
 ) analysis.Diagnostic {
 	return analysis.Diagnostic{
 		Pos: privateMethod.Pos(),
-		URL: "https://github.com/manuelarte/funcorder?tab=readme-ov-file#check-exported-methods-are-placed-before-non-exported-methods",
+		URL: "https://github.com/manuelarte/funcorder?tab=readme-ov-file#check-exported-methods-are-placed-before-non-exported-methods", //nolint: lll // url
 		Message: fmt.Sprintf("unexported method %q for struct %q should be placed after the exported method %q",
 			privateMethod.Name, structSpec.Name, publicMethod.Name),
 	}
