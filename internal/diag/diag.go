@@ -12,7 +12,8 @@ import (
 )
 
 func NewConstructorNotAfterStructType(fset *token.FileSet,
-	structSpec *ast.TypeSpec, constructor *ast.FuncDecl) (analysis.Diagnostic, error) {
+	structSpec *ast.TypeSpec, constructor *ast.FuncDecl,
+) (analysis.Diagnostic, error) {
 	suggestedFixConstructorByte, err := astutils.NodeToByteArray(fset, constructor)
 	if err != nil {
 		return analysis.Diagnostic{}, err
@@ -36,11 +37,9 @@ func NewConstructorNotAfterStructType(fset *token.FileSet,
 						NewText: make([]byte, 0),
 					},
 					{
-						Pos: structSpec.Type.End(),
-						End: token.NoPos,
-						NewText: slices.Concat([]byte("\n"),
-							[]byte("\n"),
-							suggestedFixConstructorByte),
+						Pos:     structSpec.Type.End(),
+						End:     token.NoPos,
+						NewText: slices.Concat([]byte("\n"), []byte("\n"), suggestedFixConstructorByte),
 					},
 				},
 			},
@@ -49,16 +48,46 @@ func NewConstructorNotAfterStructType(fset *token.FileSet,
 }
 
 func NewConstructorNotBeforeStructMethod(
+	fset *token.FileSet,
 	structSpec *ast.TypeSpec,
 	constructor *ast.FuncDecl,
 	method *ast.FuncDecl,
-) analysis.Diagnostic {
+) (analysis.Diagnostic, error) {
+	suggestedFixConstructorByte, err := astutils.NodeToByteArray(fset, constructor)
+	if err != nil {
+		return analysis.Diagnostic{}, err
+	}
+	removingPos := constructor.Pos()
+	if constructor.Doc != nil {
+		removingPos = constructor.Doc.Pos()
+	}
+	methodPos := method.Pos()
+	if method.Doc != nil {
+		methodPos = method.Doc.Pos()
+	}
 	return analysis.Diagnostic{
 		Pos: constructor.Pos(),
 		URL: "https://github.com/manuelarte/funcorder?tab=readme-ov-file#check-constructors-functions-are-placed-after-struct-declaration", //nolint: lll // url
 		Message: fmt.Sprintf("constructor %q for struct %q should be placed before struct method %q",
 			constructor.Name, structSpec.Name, method.Name),
-	}
+		SuggestedFixes: []analysis.SuggestedFix{
+			{
+				Message: fmt.Sprintf("constructor %q for struct %q should be placed before struct method %q",
+					constructor.Name, structSpec.Name, method.Name),
+				TextEdits: []analysis.TextEdit{
+					{
+						Pos:     removingPos,
+						End:     constructor.End(),
+						NewText: make([]byte, 0),
+					},
+					{
+						Pos:     methodPos,
+						NewText: slices.Concat(suggestedFixConstructorByte, []byte("\n\n")),
+					},
+				},
+			},
+		},
+	}, nil
 }
 
 func NewAdjacentConstructorsNotSortedAlphabetically(

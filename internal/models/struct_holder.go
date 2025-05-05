@@ -76,7 +76,11 @@ func (sh *StructHolder) analyzeConstructor() ([]analysis.Diagnostic, error) {
 		}
 
 		if len(sh.StructMethods) > 0 && constructor.Pos() > sh.StructMethods[0].Pos() {
-			reports = append(reports, diag.NewConstructorNotBeforeStructMethod(sh.Struct, constructor, sh.StructMethods[0]))
+			diagnosis, err := diag.NewConstructorNotBeforeStructMethod(sh.Fset, sh.Struct, constructor, sh.StructMethods[0])
+			if err != nil {
+				return nil, err
+			}
+			reports = append(reports, diagnosis)
 		}
 
 		if sh.Features.IsEnabled(features.AlphabeticalCheck) &&
