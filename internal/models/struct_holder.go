@@ -5,6 +5,7 @@ import (
 	"go/ast"
 	"go/token"
 	"slices"
+	"strings"
 
 	"golang.org/x/tools/go/analysis"
 
@@ -126,8 +127,8 @@ func (sh *StructHolder) analyzeStructMethod() []analysis.Diagnostic {
 
 	if sh.Features.IsEnabled(features.AlphabeticalCheck) {
 		return slices.Concat(reports,
-			isSorted(sh.Struct, filterMethods(sh.StructMethods, true)),
-			isSorted(sh.Struct, filterMethods(sh.StructMethods, false)),
+			isSorted(sh.Struct, astutils.FilterFuncDeclOnExportedFlag(sh.StructMethods, true)),
+			isSorted(sh.Struct, astutils.FilterFuncDeclOnExportedFlag(sh.StructMethods, false)),
 		)
 	}
 
@@ -135,9 +136,7 @@ func (sh *StructHolder) analyzeStructMethod() []analysis.Diagnostic {
 }
 
 func (sh *StructHolder) suggestConstructorFix() ([]analysis.SuggestedFix, error) {
-	sortedConstructors := make([]*ast.FuncDecl, len(sh.Constructors))
-	copy(sortedConstructors, sh.Constructors)
-	// TODO(manuelarte): sort constructors for alphabetical (or not)
+	sortedConstructors := sh.copyAndSortConstructors()
 	removingConstructorsTextEdit := make([]analysis.TextEdit, len(sh.Constructors))
 	addingConstructorsTextEdit := make([]analysis.TextEdit, len(sh.Constructors))
 	for i, constructor := range sortedConstructors {
@@ -168,18 +167,16 @@ func (sh *StructHolder) suggestConstructorFix() ([]analysis.SuggestedFix, error)
 	return suggestedFixes, nil
 }
 
-func filterMethods(funcDecls []*ast.FuncDecl, exported bool) []*ast.FuncDecl {
-	var result []*ast.FuncDecl
-
-	for _, f := range funcDecls {
-		if f.Name.IsExported() != exported {
-			continue
-		}
-
-		result = append(result, f)
+func (sh *StructHolder) copyAndSortConstructors() []*ast.FuncDecl {
+	sortedConstructors := make([]*ast.FuncDecl, len(sh.Constructors))
+	copy(sortedConstructors, sh.Constructors)
+	if sh.Features.IsEnabled(features.AlphabeticalCheck) {
+		slices.SortFunc(sortedConstructors, func(a, b *ast.FuncDecl) int {
+			return strings.Compare(a.Name.Name, b.Name.Name)
+		})
 	}
 
-	return result
+	return sortedConstructors
 }
 
 func isSorted(typeSpec *ast.TypeSpec, funcDecls []*ast.FuncDecl) []analysis.Diagnostic {

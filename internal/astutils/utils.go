@@ -8,6 +8,21 @@ import (
 	"strings"
 )
 
+// FilterFuncDeclOnExportedFlag filter functions/methods based on the flag exported.
+func FilterFuncDeclOnExportedFlag(funcDecls []*ast.FuncDecl, exported bool) []*ast.FuncDecl {
+	var result []*ast.FuncDecl
+
+	for _, f := range funcDecls {
+		if f.Name.IsExported() != exported {
+			continue
+		}
+
+		result = append(result, f)
+	}
+
+	return result
+}
+
 func FuncCanBeConstructor(n *ast.FuncDecl) bool {
 	if !n.Name.IsExported() || n.Recv != nil {
 		return false
