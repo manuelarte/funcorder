@@ -79,9 +79,9 @@ func (f *funcorder) run(pass *analysis.Pass) (any, error) {
 		}
 		switch node := n.(type) {
 		case *ast.File:
-			reports, analyzeError := fp.Analyze()
-			if analyzeError != nil {
-				errProcessing = analyzeError
+			reports, err := fp.Analyze()
+			if err != nil {
+				errProcessing = err
 				return
 			}
 			for _, report := range reports {
