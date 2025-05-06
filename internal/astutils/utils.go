@@ -56,7 +56,7 @@ func GetIdent(expr ast.Expr) (*ast.Ident, bool) {
 	}
 }
 
-func NodeToByteArray(fset *token.FileSet, node ast.Node) ([]byte, error) {
+func NodeToBytes(fset *token.FileSet, node ast.Node) ([]byte, error) {
 	var buf bytes.Buffer
 	if err := format.Node(&buf, fset, node); err != nil {
 		return nil, err

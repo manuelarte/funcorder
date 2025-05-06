@@ -39,7 +39,7 @@ func NewConstructorNotAfterStructType(fset *token.FileSet,
 					{
 						Pos:     structSpec.Type.End(),
 						End:     token.NoPos,
-						NewText: slices.Concat([]byte("\n"), []byte("\n"), suggestedFixConstructorByte),
+						NewText: slices.Concat([]byte("\n"), []byte("\n"), suggestedBytes),
 					},
 				},
 			},
@@ -53,7 +53,7 @@ func NewConstructorNotBeforeStructMethod(
 	constructor *ast.FuncDecl,
 	method *ast.FuncDecl,
 ) (analysis.Diagnostic, error) {
-	suggestedFixConstructorByte, err := astutils.NodeToByteArray(fset, constructor)
+	suggestedFixConstructorByte, err := astutils.NodeToBytes(fset, constructor)
 	if err != nil {
 		return analysis.Diagnostic{}, err
 	}
