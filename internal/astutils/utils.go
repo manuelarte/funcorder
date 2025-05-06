@@ -56,10 +56,21 @@ func GetIdent(expr ast.Expr) (*ast.Ident, bool) {
 	}
 }
 
+// NodeToBytes convert the ast.Node in bytes.
 func NodeToBytes(fset *token.FileSet, node ast.Node) ([]byte, error) {
 	var buf bytes.Buffer
 	if err := format.Node(&buf, fset, node); err != nil {
 		return nil, err
 	}
 	return buf.Bytes(), nil
+}
+
+// GetStartingPos returns the token starting position of the function
+// taking into account if there are comments.
+func GetStartingPos(constructor *ast.FuncDecl) token.Pos {
+	startingPos := constructor.Pos()
+	if constructor.Doc != nil {
+		startingPos = constructor.Doc.Pos()
+	}
+	return startingPos
 }

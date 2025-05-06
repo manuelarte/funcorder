@@ -8,6 +8,7 @@ import (
 
 	"golang.org/x/tools/go/analysis"
 
+	"github.com/manuelarte/funcorder/internal/astutils"
 	"github.com/manuelarte/funcorder/internal/diag"
 	"github.com/manuelarte/funcorder/internal/features"
 )
@@ -68,19 +69,11 @@ func (sh *StructHolder) analyzeConstructor() ([]analysis.Diagnostic, error) {
 
 	for i, constructor := range sh.Constructors {
 		if constructor.Pos() < sh.Struct.Pos() {
-			diagnosis, err := diag.NewConstructorNotAfterStructType(sh.Fset, sh.Struct, constructor)
-			if err != nil {
-				return nil, err
-			}
-			reports = append(reports, diagnosis)
+			reports = append(reports, diag.NewConstructorNotAfterStructType(sh.Struct, constructor))
 		}
 
 		if len(sh.StructMethods) > 0 && constructor.Pos() > sh.StructMethods[0].Pos() {
-			diagnosis, err := diag.NewConstructorNotBeforeStructMethod(sh.Fset, sh.Struct, constructor, sh.StructMethods[0])
-			if err != nil {
-				return nil, err
-			}
-			reports = append(reports, diagnosis)
+			reports = append(reports, diag.NewConstructorNotBeforeStructMethod(sh.Struct, constructor, sh.StructMethods[0]))
 		}
 
 		if sh.Features.IsEnabled(features.AlphabeticalCheck) &&
@@ -88,6 +81,15 @@ func (sh *StructHolder) analyzeConstructor() ([]analysis.Diagnostic, error) {
 			reports = append(reports,
 				diag.NewAdjacentConstructorsNotSortedAlphabetically(sh.Struct, sh.Constructors[i], sh.Constructors[i+1]),
 			)
+		}
+
+		// propose fix
+		if len(reports) > 0 {
+			suggestedFixes, err := sh.suggestConstructorFix()
+			if err != nil {
+				return nil, err
+			}
+			reports[0].SuggestedFixes = suggestedFixes
 		}
 	}
 	return reports, nil
@@ -130,6 +132,40 @@ func (sh *StructHolder) analyzeStructMethod() []analysis.Diagnostic {
 	}
 
 	return reports
+}
+
+func (sh *StructHolder) suggestConstructorFix() ([]analysis.SuggestedFix, error) {
+	sortedConstructors := make([]*ast.FuncDecl, len(sh.Constructors))
+	copy(sortedConstructors, sh.Constructors)
+	// TODO(manuelarte): sort constructors for alphabetical (or not)
+	removingConstructorsTextEdit := make([]analysis.TextEdit, len(sh.Constructors))
+	addingConstructorsTextEdit := make([]analysis.TextEdit, len(sh.Constructors))
+	for i, constructor := range sortedConstructors {
+		removingConstructorsTextEdit[i] = analysis.TextEdit{
+			Pos:     astutils.GetStartingPos(constructor),
+			End:     constructor.End(),
+			NewText: make([]byte, 0),
+		}
+		constructorBytes, err := astutils.NodeToBytes(sh.Fset, constructor)
+		if err != nil {
+			return nil, err
+		}
+		addingConstructorsTextEdit[i] = analysis.TextEdit{
+			Pos:     sh.Struct.End(),
+			NewText: slices.Concat([]byte("\n\n"), constructorBytes),
+		}
+	}
+	suggestedFixes := []analysis.SuggestedFix{
+		{
+			Message:   "Removing current constructors",
+			TextEdits: removingConstructorsTextEdit,
+		},
+		{
+			Message:   "Adding constructors after struct declaration",
+			TextEdits: addingConstructorsTextEdit,
+		},
+	}
+	return suggestedFixes, nil
 }
 
 func filterMethods(funcDecls []*ast.FuncDecl, exported bool) []*ast.FuncDecl {

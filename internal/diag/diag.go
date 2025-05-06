@@ -3,92 +3,30 @@ package diag
 import (
 	"fmt"
 	"go/ast"
-	"go/token"
-	"slices"
 
 	"golang.org/x/tools/go/analysis"
-
-	"github.com/manuelarte/funcorder/internal/astutils"
 )
 
-func NewConstructorNotAfterStructType(
-	fset *token.FileSet,
-	structSpec *ast.TypeSpec,
-	constructor *ast.FuncDecl,
-) (analysis.Diagnostic, error) {
-	suggestedBytes, err := astutils.NodeToBytes(fset, constructor)
-	if err != nil {
-		return analysis.Diagnostic{}, err
-	}
-	removingPos := constructor.Pos()
-	if constructor.Doc != nil {
-		removingPos = constructor.Doc.Pos()
-	}
+func NewConstructorNotAfterStructType(structSpec *ast.TypeSpec, constructor *ast.FuncDecl) analysis.Diagnostic {
 	return analysis.Diagnostic{
 		Pos: constructor.Pos(),
 		Message: fmt.Sprintf("constructor %q for struct %q should be placed after the struct declaration",
 			constructor.Name, structSpec.Name),
 		URL: "https://github.com/manuelarte/funcorder?tab=readme-ov-file#check-constructors-functions-are-placed-after-struct-declaration", //nolint:lll // url
-		SuggestedFixes: []analysis.SuggestedFix{
-			{
-				Message: fmt.Sprintf("The constructor %q should be placed after the struct declaration", constructor.Name),
-				TextEdits: []analysis.TextEdit{
-					{
-						Pos:     removingPos,
-						End:     constructor.End(),
-						NewText: make([]byte, 0),
-					},
-					{
-						Pos:     structSpec.Type.End(),
-						NewText: slices.Concat([]byte("\n\n"), suggestedBytes),
-					},
-				},
-			},
-		},
-	}, nil
+	}
 }
 
 func NewConstructorNotBeforeStructMethod(
-	fset *token.FileSet,
 	structSpec *ast.TypeSpec,
 	constructor *ast.FuncDecl,
 	method *ast.FuncDecl,
-) (analysis.Diagnostic, error) {
-	suggestedFixConstructorByte, err := astutils.NodeToBytes(fset, constructor)
-	if err != nil {
-		return analysis.Diagnostic{}, err
-	}
-	removingPos := constructor.Pos()
-	if constructor.Doc != nil {
-		removingPos = constructor.Doc.Pos()
-	}
-	methodPos := method.Pos()
-	if method.Doc != nil {
-		methodPos = method.Doc.Pos()
-	}
+) analysis.Diagnostic {
 	return analysis.Diagnostic{
 		Pos: constructor.Pos(),
 		URL: "https://github.com/manuelarte/funcorder?tab=readme-ov-file#check-constructors-functions-are-placed-after-struct-declaration", //nolint:lll // url
 		Message: fmt.Sprintf("constructor %q for struct %q should be placed before struct method %q",
 			constructor.Name, structSpec.Name, method.Name),
-		SuggestedFixes: []analysis.SuggestedFix{
-			{
-				Message: fmt.Sprintf("constructor %q for struct %q should be placed before struct method %q",
-					constructor.Name, structSpec.Name, method.Name),
-				TextEdits: []analysis.TextEdit{
-					{
-						Pos:     removingPos,
-						End:     constructor.End(),
-						NewText: make([]byte, 0),
-					},
-					{
-						Pos:     methodPos,
-						NewText: slices.Concat(suggestedFixConstructorByte, []byte("\n\n")),
-					},
-				},
-			},
-		},
-	}, nil
+	}
 }
 
 func NewAdjacentConstructorsNotSortedAlphabetically(
