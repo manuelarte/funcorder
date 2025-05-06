@@ -11,8 +11,10 @@ import (
 	"github.com/manuelarte/funcorder/internal/astutils"
 )
 
-func NewConstructorNotAfterStructType(fset *token.FileSet,
-	structSpec *ast.TypeSpec, constructor *ast.FuncDecl,
+func NewConstructorNotAfterStructType(
+	fset *token.FileSet,
+	structSpec *ast.TypeSpec,
+	constructor *ast.FuncDecl,
 ) (analysis.Diagnostic, error) {
 	suggestedBytes, err := astutils.NodeToBytes(fset, constructor)
 	if err != nil {
@@ -38,8 +40,7 @@ func NewConstructorNotAfterStructType(fset *token.FileSet,
 					},
 					{
 						Pos:     structSpec.Type.End(),
-						End:     token.NoPos,
-						NewText: slices.Concat([]byte("\n"), []byte("\n"), suggestedBytes),
+						NewText: slices.Concat([]byte("\n\n"), suggestedBytes),
 					},
 				},
 			},
