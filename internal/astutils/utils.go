@@ -6,8 +6,6 @@ import (
 	"go/format"
 	"go/token"
 	"strings"
-
-	"github.com/manuelarte/funcorder/internal/models"
 )
 
 func FuncCanBeConstructor(n *ast.FuncDecl) bool {
@@ -78,9 +76,9 @@ func NodeToBytes(fset *token.FileSet, node ast.Node) ([]byte, error) {
 }
 
 // SplitExportedUnexported split functions/methods based on whether they are exported or not.
-func SplitExportedUnexported(funcDecls []*ast.FuncDecl) (models.ExportedMethods, models.UnexportedMethods) {
-	var exported models.ExportedMethods
-	var unexported models.UnexportedMethods
+//
+//nolint:nonamedreturns // names serve as documentation
+func SplitExportedUnexported(funcDecls []*ast.FuncDecl) (exported []*ast.FuncDecl, unexported []*ast.FuncDecl) {
 	for _, f := range funcDecls {
 		if f.Name.IsExported() {
 			exported = append(exported, f)

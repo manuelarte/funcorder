@@ -8,7 +8,7 @@ import (
 
 	"github.com/manuelarte/funcorder/internal/astutils"
 	"github.com/manuelarte/funcorder/internal/features"
-	"github.com/manuelarte/funcorder/internal/structconstructor"
+	"github.com/manuelarte/funcorder/internal/models"
 	"github.com/manuelarte/funcorder/internal/structholder"
 )
 
@@ -51,7 +51,7 @@ func (fp *FileProcessor) NewFileNode(_ *ast.File) {
 }
 
 func (fp *FileProcessor) NewFuncDecl(n *ast.FuncDecl) {
-	if sc, ok := structconstructor.NewStructConstructor(n); ok {
+	if sc, ok := models.NewStructConstructor(n); ok {
 		fp.addConstructor(sc)
 		return
 	}
@@ -66,7 +66,7 @@ func (fp *FileProcessor) NewTypeSpec(n *ast.TypeSpec) {
 	sh.Struct = n
 }
 
-func (fp *FileProcessor) addConstructor(sc structconstructor.StructConstructor) {
+func (fp *FileProcessor) addConstructor(sc models.StructConstructor) {
 	sh := fp.getOrCreate(sc.GetStructReturn().Name)
 	sh.AddConstructor(sc.GetConstructor())
 }

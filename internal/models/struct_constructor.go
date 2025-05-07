@@ -1,4 +1,4 @@
-package structconstructor
+package models
 
 import (
 	"go/ast"
