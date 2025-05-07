@@ -245,13 +245,10 @@ func (sh *StructHolder) suggestMethodFix() ([]analysis.SuggestedFix, error) {
 	return suggestedFixes, nil
 }
 
-func (sh *StructHolder) copyAndSortMethods() (
-	sortedExported models.ExportedMethods,
-	sortedUnexported models.UnExportedMethods,
-) {
+func (sh *StructHolder) copyAndSortMethods() (models.ExportedMethods, models.UnExportedMethods) {
 	exported, unexported := astutils.SplitExportedUnExported(sh.StructMethods)
-	sortedExported = make([]*ast.FuncDecl, len(exported))
-	sortedUnexported = make([]*ast.FuncDecl, len(unexported))
+	sortedExported := make([]*ast.FuncDecl, len(exported))
+	sortedUnexported := make([]*ast.FuncDecl, len(unexported))
 	copy(sortedExported, exported)
 	copy(sortedUnexported, unexported)
 	if sh.Features.IsEnabled(features.AlphabeticalCheck) {
@@ -259,7 +256,7 @@ func (sh *StructHolder) copyAndSortMethods() (
 		slices.SortFunc(sortedUnexported, alphabeticalSortFunc)
 	}
 
-	return
+	return sortedExported, sortedUnexported
 }
 
 func isSorted(typeSpec *ast.TypeSpec, funcDecls []*ast.FuncDecl) []analysis.Diagnostic {
