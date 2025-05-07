@@ -116,6 +116,24 @@ func TestAnalyzerWithFix(t *testing.T) {
 				AlphabeticalCheckName: "true",
 			},
 		},
+		{
+			desc:     "simple fix",
+			patterns: "simple-fix",
+			options: map[string]string{
+				ConstructorCheckName:  "true",
+				StructMethodCheckName: "true",
+				AlphabeticalCheckName: "false",
+			},
+		},
+		{
+			desc:     "simple alphabetical fix",
+			patterns: "simple-alphabetical-fix",
+			options: map[string]string{
+				ConstructorCheckName:  "true",
+				StructMethodCheckName: "true",
+				AlphabeticalCheckName: "true",
+			},
+		},
 	}
 
 	for _, test := range testCases {
