@@ -175,12 +175,8 @@ func (sh *StructHolder) suggestConstructorFix() ([]analysis.SuggestedFix, error)
 	}
 	suggestedFixes := []analysis.SuggestedFix{
 		{
-			Message:   "Removing current constructors",
-			TextEdits: removingConstructorsTextEdit,
-		},
-		{
-			Message:   "Adding constructors after struct declaration",
-			TextEdits: addingConstructorsTextEdit,
+			Message:   "Removing current constructors and adding them after struct declaration",
+			TextEdits: slices.Concat(removingConstructorsTextEdit, addingConstructorsTextEdit),
 		},
 	}
 
@@ -233,12 +229,8 @@ func (sh *StructHolder) suggestMethodFix() ([]analysis.SuggestedFix, error) {
 	}
 	suggestedFixes := []analysis.SuggestedFix{
 		{
-			Message:   "Removing current methods",
-			TextEdits: removingMethodsTextEdit,
-		},
-		{
-			Message:   "Adding sorted methods",
-			TextEdits: addingMethodsTextEdit,
+			Message:   "Removing current methods and adding them sorted",
+			TextEdits: slices.Concat(removingMethodsTextEdit, addingMethodsTextEdit),
 		},
 	}
 
