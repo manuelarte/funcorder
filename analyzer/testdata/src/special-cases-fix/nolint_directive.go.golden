@@ -1,0 +1,8 @@
+package special_cases_fix
+
+type NoLLLDirective struct{}
+
+//nolint:lll // test directive
+func NewNoLLLDirective() *NoLLLDirective {
+	return &NoLLLDirective{}
+}

@@ -134,6 +134,15 @@ func TestAnalyzerWithFix(t *testing.T) {
 				AlphabeticalCheckName: "true",
 			},
 		},
+		{
+			desc:     "special cases",
+			patterns: "special-cases-fix",
+			options: map[string]string{
+				ConstructorCheckName:  "true",
+				StructMethodCheckName: "true",
+				AlphabeticalCheckName: "false",
+			},
+		},
 	}
 
 	for _, test := range testCases {
