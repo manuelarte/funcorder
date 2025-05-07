@@ -42,14 +42,14 @@ func NewAdjacentConstructorsNotSortedAlphabetically(
 	}
 }
 
-func NewNonExportedMethodBeforeExportedForStruct(
+func NewUnexportedMethodBeforeExportedForStruct(
 	structSpec *ast.TypeSpec,
 	privateMethod *ast.FuncDecl,
 	publicMethod *ast.FuncDecl,
 ) analysis.Diagnostic {
 	return analysis.Diagnostic{
 		Pos: privateMethod.Pos(),
-		URL: "https://github.com/manuelarte/funcorder?tab=readme-ov-file#check-exported-methods-are-placed-before-non-exported-methods", //nolint: lll // url
+		URL: "https://github.com/manuelarte/funcorder?tab=readme-ov-file#check-exported-methods-are-placed-before-unexported-methods", //nolint:lll // url
 		Message: fmt.Sprintf("unexported method %q for struct %q should be placed after the exported method %q",
 			privateMethod.Name, structSpec.Name, publicMethod.Name),
 	}

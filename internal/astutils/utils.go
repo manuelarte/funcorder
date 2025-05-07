@@ -77,17 +77,17 @@ func NodeToBytes(fset *token.FileSet, node ast.Node) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-// SplitExportedUnExported split functions/methods based on whether they are exported or not.
-func SplitExportedUnExported(funcDecls []*ast.FuncDecl) (models.ExportedMethods, models.UnExportedMethods) {
+// SplitExportedUnexported split functions/methods based on whether they are exported or not.
+func SplitExportedUnexported(funcDecls []*ast.FuncDecl) (models.ExportedMethods, models.UnexportedMethods) {
 	var exported models.ExportedMethods
-	var unExported models.UnExportedMethods
+	var unexported models.UnexportedMethods
 	for _, f := range funcDecls {
 		if f.Name.IsExported() {
 			exported = append(exported, f)
 		} else {
-			unExported = append(unExported, f)
+			unexported = append(unexported, f)
 		}
 	}
 
-	return exported, unExported
+	return exported, unexported
 }

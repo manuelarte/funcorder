@@ -131,15 +131,15 @@ func (sh *StructHolder) analyzeStructMethod() ([]analysis.Diagnostic, error) {
 				continue
 			}
 
-			reports = append(reports, diag.NewNonExportedMethodBeforeExportedForStruct(sh.Struct, m, lastExportedMethod))
+			reports = append(reports, diag.NewUnexportedMethodBeforeExportedForStruct(sh.Struct, m, lastExportedMethod))
 		}
 	}
 
 	if sh.Features.IsEnabled(features.AlphabeticalCheck) {
-		exported, unexported := astutils.SplitExportedUnExported(sh.StructMethods)
+		exported, unexported := astutils.SplitExportedUnexported(sh.StructMethods)
 		reports = slices.Concat(reports,
-			isSorted(sh.Struct, exported),
-			isSorted(sh.Struct, unexported),
+			sortDiagnostics(sh.Struct, exported),
+			sortDiagnostics(sh.Struct, unexported),
 		)
 	}
 
@@ -237,8 +237,8 @@ func (sh *StructHolder) suggestMethodFix() ([]analysis.SuggestedFix, error) {
 	return suggestedFixes, nil
 }
 
-func (sh *StructHolder) copyAndSortMethods() (models.ExportedMethods, models.UnExportedMethods) {
-	exported, unexported := astutils.SplitExportedUnExported(sh.StructMethods)
+func (sh *StructHolder) copyAndSortMethods() (models.ExportedMethods, models.UnexportedMethods) {
+	exported, unexported := astutils.SplitExportedUnexported(sh.StructMethods)
 	sortedExported := make([]*ast.FuncDecl, len(exported))
 	sortedUnexported := make([]*ast.FuncDecl, len(unexported))
 	copy(sortedExported, exported)
@@ -251,7 +251,7 @@ func (sh *StructHolder) copyAndSortMethods() (models.ExportedMethods, models.UnE
 	return sortedExported, sortedUnexported
 }
 
-func isSorted(typeSpec *ast.TypeSpec, funcDecls []*ast.FuncDecl) []analysis.Diagnostic {
+func sortDiagnostics(typeSpec *ast.TypeSpec, funcDecls []*ast.FuncDecl) []analysis.Diagnostic {
 	var reports []analysis.Diagnostic
 
 	for i := range funcDecls {
