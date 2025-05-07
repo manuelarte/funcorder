@@ -208,7 +208,7 @@ func (sh *StructHolder) suggestMethodFix() ([]analysis.SuggestedFix, error) {
 			return nil, err
 		}
 		addingMethodsTextEdit[i] = analysis.TextEdit{
-			Pos:     sh.StructMethods[0].Pos(),
+			Pos:     astutils.GetStartingPos(sh.StructMethods[0]),
 			NewText: slices.Concat(methodBytes, []byte("\n\n")),
 		}
 	}
@@ -223,7 +223,7 @@ func (sh *StructHolder) suggestMethodFix() ([]analysis.SuggestedFix, error) {
 			return nil, err
 		}
 		addingMethodsTextEdit[i+len(sortedExported)] = analysis.TextEdit{
-			Pos:     sh.StructMethods[0].Pos(),
+			Pos:     astutils.GetStartingPos(sh.StructMethods[0]),
 			NewText: slices.Concat(methodBytes, []byte("\n\n")),
 		}
 	}
