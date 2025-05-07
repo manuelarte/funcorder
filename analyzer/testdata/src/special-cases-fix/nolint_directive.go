@@ -6,3 +6,13 @@ func NewNoLLLDirective() *NoLLLDirective { // want `constructor "NewNoLLLDirecti
 }
 
 type NoLLLDirective struct{}
+
+// NewNoLLLDirectiveWithDoc constructor for NoLLLDirectiveWithDoc
+//
+//nolint:lll // test directive
+func NewNoLLLDirectiveWithDoc() *NoLLLDirectiveWithDoc { // want `constructor "NewNoLLLDirectiveWithDoc" for struct "NoLLLDirectiveWithDoc" should be placed after the struct declaration`
+	return &NoLLLDirectiveWithDoc{}
+}
+
+// NoLLLDirectiveWithDoc with docs.
+type NoLLLDirectiveWithDoc struct{}
