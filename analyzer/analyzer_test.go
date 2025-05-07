@@ -81,8 +81,8 @@ func TestAnalyzerWithFix(t *testing.T) {
 		options  map[string]string
 	}{
 		{
-			desc:     "fix constructor",
-			patterns: "fix-constructor",
+			desc:     "constructor fix",
+			patterns: "constructor-check-fix",
 			options: map[string]string{
 				ConstructorCheckName:  "true",
 				StructMethodCheckName: "false",
@@ -90,11 +90,29 @@ func TestAnalyzerWithFix(t *testing.T) {
 			},
 		},
 		{
-			desc:     "fix constructor alphabetical",
-			patterns: "fix-constructor-alphabetical",
+			desc:     "constructor alphabetical fix",
+			patterns: "constructor-check-alphabetical-fix",
 			options: map[string]string{
 				ConstructorCheckName:  "true",
 				StructMethodCheckName: "false",
+				AlphabeticalCheckName: "true",
+			},
+		},
+		{
+			desc:     "struct method fix",
+			patterns: "struct-method-fix",
+			options: map[string]string{
+				ConstructorCheckName:  "false",
+				StructMethodCheckName: "true",
+				AlphabeticalCheckName: "false",
+			},
+		},
+		{
+			desc:     "struct method alphabetical fix",
+			patterns: "struct-method-alphabetical-fix",
+			options: map[string]string{
+				ConstructorCheckName:  "false",
+				StructMethodCheckName: "true",
 				AlphabeticalCheckName: "true",
 			},
 		},

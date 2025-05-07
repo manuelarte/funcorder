@@ -1,4 +1,4 @@
-package fix_constructor
+package constructor_check_alphabetical_fix
 
 type ConstructorAfterStructMethodsWithComments struct {
 	Name string
@@ -23,6 +23,6 @@ func NewOtherConstructorAfterStructMethodsWithComments() (m *ConstructorAfterStr
 	return
 }
 
-func NewConstructorAfterStructMethodsWithComments() *ConstructorAfterStructMethodsWithComments { // want `constructor \"NewConstructorAfterStructMethodsWithComments\" for struct \"ConstructorAfterStructMethodsWithComments\" should be placed before struct method \"GetName\"`
+func NewConstructorAfterStructMethodsWithComments() *ConstructorAfterStructMethodsWithComments { // want `constructor \"NewConstructorAfterStructMethodsWithComments\" for struct \"ConstructorAfterStructMethodsWithComments\" should be placed before struct method \"GetName\"` `constructor \"NewConstructorAfterStructMethodsWithComments\" for struct \"ConstructorAfterStructMethodsWithComments\" should be placed before constructor \"NewOtherConstructorAfterStructMethodsWithComments\"`
 	return &ConstructorAfterStructMethodsWithComments{Name: "John"}
 }

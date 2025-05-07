@@ -8,13 +8,14 @@ import (
 
 	"github.com/manuelarte/funcorder/internal/astutils"
 	"github.com/manuelarte/funcorder/internal/features"
-	"github.com/manuelarte/funcorder/internal/models"
+	"github.com/manuelarte/funcorder/internal/structconstructor"
+	"github.com/manuelarte/funcorder/internal/structholder"
 )
 
 // FileProcessor Holder to store all the functions that are potential to be constructors and all the structs.
 type FileProcessor struct {
 	fset     *token.FileSet
-	structs  map[string]*models.StructHolder
+	structs  map[string]*structholder.StructHolder
 	features features.Feature
 }
 
@@ -22,7 +23,7 @@ type FileProcessor struct {
 func NewFileProcessor(fset *token.FileSet, checkers features.Feature) *FileProcessor {
 	return &FileProcessor{
 		fset:     fset,
-		structs:  make(map[string]*models.StructHolder),
+		structs:  make(map[string]*structholder.StructHolder),
 		features: checkers,
 	}
 }
@@ -46,11 +47,11 @@ func (fp *FileProcessor) Analyze() ([]analysis.Diagnostic, error) {
 }
 
 func (fp *FileProcessor) NewFileNode(_ *ast.File) {
-	fp.structs = make(map[string]*models.StructHolder)
+	fp.structs = make(map[string]*structholder.StructHolder)
 }
 
 func (fp *FileProcessor) NewFuncDecl(n *ast.FuncDecl) {
-	if sc, ok := models.NewStructConstructor(n); ok {
+	if sc, ok := structconstructor.NewStructConstructor(n); ok {
 		fp.addConstructor(sc)
 		return
 	}
@@ -65,7 +66,7 @@ func (fp *FileProcessor) NewTypeSpec(n *ast.TypeSpec) {
 	sh.Struct = n
 }
 
-func (fp *FileProcessor) addConstructor(sc models.StructConstructor) {
+func (fp *FileProcessor) addConstructor(sc structconstructor.StructConstructor) {
 	sh := fp.getOrCreate(sc.GetStructReturn().Name)
 	sh.AddConstructor(sc.GetConstructor())
 }
@@ -75,12 +76,12 @@ func (fp *FileProcessor) addMethod(st string, n *ast.FuncDecl) {
 	sh.AddMethod(n)
 }
 
-func (fp *FileProcessor) getOrCreate(structName string) *models.StructHolder {
+func (fp *FileProcessor) getOrCreate(structName string) *structholder.StructHolder {
 	if holder, ok := fp.structs[structName]; ok {
 		return holder
 	}
 
-	created := &models.StructHolder{
+	created := &structholder.StructHolder{
 		Fset:     fp.fset,
 		Features: fp.features,
 	}

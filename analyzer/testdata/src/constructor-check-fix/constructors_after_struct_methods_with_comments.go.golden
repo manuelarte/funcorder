@@ -1,4 +1,4 @@
-package fix_constructor
+package constructor_check_fix
 
 type ConstructorAfterStructMethodsWithComments struct {
 	Name string

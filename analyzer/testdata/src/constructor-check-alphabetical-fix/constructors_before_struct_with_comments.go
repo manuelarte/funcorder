@@ -1,4 +1,4 @@
-package fix_constructor
+package constructor_check_alphabetical_fix
 
 // NewOtherConstructorAfterStructMethodsWithComments This constructor creates the
 // struct ConstructorBeforeStructWithComments

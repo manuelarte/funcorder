@@ -6,22 +6,9 @@ import (
 	"go/format"
 	"go/token"
 	"strings"
+
+	"github.com/manuelarte/funcorder/internal/models"
 )
-
-// FilterFuncDeclOnExportedFlag filter functions/methods based on the flag exported.
-func FilterFuncDeclOnExportedFlag(funcDecls []*ast.FuncDecl, exported bool) []*ast.FuncDecl {
-	var result []*ast.FuncDecl
-
-	for _, f := range funcDecls {
-		if f.Name.IsExported() != exported {
-			continue
-		}
-
-		result = append(result, f)
-	}
-
-	return result
-}
 
 func FuncCanBeConstructor(n *ast.FuncDecl) bool {
 	if !n.Name.IsExported() || n.Recv != nil {
@@ -71,6 +58,16 @@ func GetIdent(expr ast.Expr) (*ast.Ident, bool) {
 	}
 }
 
+// GetStartingPos returns the token starting position of the function
+// taking into account if there are comments.
+func GetStartingPos(function *ast.FuncDecl) token.Pos {
+	startingPos := function.Pos()
+	if function.Doc != nil {
+		startingPos = function.Doc.Pos()
+	}
+	return startingPos
+}
+
 // NodeToBytes convert the ast.Node in bytes.
 func NodeToBytes(fset *token.FileSet, node ast.Node) ([]byte, error) {
 	var buf bytes.Buffer
@@ -80,12 +77,17 @@ func NodeToBytes(fset *token.FileSet, node ast.Node) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-// GetStartingPos returns the token starting position of the function
-// taking into account if there are comments.
-func GetStartingPos(constructor *ast.FuncDecl) token.Pos {
-	startingPos := constructor.Pos()
-	if constructor.Doc != nil {
-		startingPos = constructor.Doc.Pos()
+// SplitExportedUnExported split functions/methods based on whether they are exported or not.
+func SplitExportedUnExported(funcDecls []*ast.FuncDecl) (models.ExportedMethods, models.UnExportedMethods) {
+	var exported models.ExportedMethods
+	var unExported models.UnExportedMethods
+	for _, f := range funcDecls {
+		if f.Name.IsExported() {
+			exported = append(exported, f)
+		} else {
+			unExported = append(unExported, f)
+		}
 	}
-	return startingPos
+
+	return exported, unExported
 }

@@ -1,4 +1,4 @@
-package models
+package structholder
 
 import (
 	"cmp"
@@ -12,7 +12,13 @@ import (
 	"github.com/manuelarte/funcorder/internal/astutils"
 	"github.com/manuelarte/funcorder/internal/diag"
 	"github.com/manuelarte/funcorder/internal/features"
+	"github.com/manuelarte/funcorder/internal/models"
 )
+
+//nolint:gochecknoglobals // constant
+var alphabeticalSortFunc = func(a, b *ast.FuncDecl) int {
+	return strings.Compare(a.Name.Name, b.Name.Name)
+}
 
 // StructHolder contains all the information around a Go struct.
 type StructHolder struct {
@@ -58,7 +64,11 @@ func (sh *StructHolder) Analyze() ([]analysis.Diagnostic, error) {
 	}
 
 	if sh.Features.IsEnabled(features.StructMethodCheck) {
-		reports = append(reports, sh.analyzeStructMethod()...)
+		newReports, err := sh.analyzeStructMethod()
+		if err != nil {
+			return nil, err
+		}
+		reports = append(reports, newReports...)
 	}
 
 	// TODO also check that the methods are declared after the struct
@@ -96,7 +106,7 @@ func (sh *StructHolder) analyzeConstructor() ([]analysis.Diagnostic, error) {
 	return reports, nil
 }
 
-func (sh *StructHolder) analyzeStructMethod() []analysis.Diagnostic {
+func (sh *StructHolder) analyzeStructMethod() ([]analysis.Diagnostic, error) {
 	var lastExportedMethod *ast.FuncDecl
 
 	for _, m := range sh.StructMethods {
@@ -126,13 +136,22 @@ func (sh *StructHolder) analyzeStructMethod() []analysis.Diagnostic {
 	}
 
 	if sh.Features.IsEnabled(features.AlphabeticalCheck) {
-		return slices.Concat(reports,
-			isSorted(sh.Struct, astutils.FilterFuncDeclOnExportedFlag(sh.StructMethods, true)),
-			isSorted(sh.Struct, astutils.FilterFuncDeclOnExportedFlag(sh.StructMethods, false)),
+		exported, unexported := astutils.SplitExportedUnExported(sh.StructMethods)
+		reports = slices.Concat(reports,
+			isSorted(sh.Struct, exported),
+			isSorted(sh.Struct, unexported),
 		)
 	}
 
-	return reports
+	if len(reports) > 0 {
+		suggestedFixes, err := sh.suggestMethodFix()
+		if err != nil {
+			return nil, err
+		}
+		reports[0].SuggestedFixes = suggestedFixes
+	}
+
+	return reports, nil
 }
 
 func (sh *StructHolder) suggestConstructorFix() ([]analysis.SuggestedFix, error) {
@@ -164,6 +183,7 @@ func (sh *StructHolder) suggestConstructorFix() ([]analysis.SuggestedFix, error)
 			TextEdits: addingConstructorsTextEdit,
 		},
 	}
+
 	return suggestedFixes, nil
 }
 
@@ -171,12 +191,75 @@ func (sh *StructHolder) copyAndSortConstructors() []*ast.FuncDecl {
 	sortedConstructors := make([]*ast.FuncDecl, len(sh.Constructors))
 	copy(sortedConstructors, sh.Constructors)
 	if sh.Features.IsEnabled(features.AlphabeticalCheck) {
-		slices.SortFunc(sortedConstructors, func(a, b *ast.FuncDecl) int {
-			return strings.Compare(a.Name.Name, b.Name.Name)
-		})
+		slices.SortFunc(sortedConstructors, alphabeticalSortFunc)
 	}
 
 	return sortedConstructors
+}
+
+func (sh *StructHolder) suggestMethodFix() ([]analysis.SuggestedFix, error) {
+	sortedExported, sortedUnexported := sh.copyAndSortMethods()
+	removingMethodsTextEdit := make([]analysis.TextEdit, len(sh.StructMethods))
+	addingMethodsTextEdit := make([]analysis.TextEdit, len(sh.StructMethods))
+	for i, method := range sortedExported {
+		removingMethodsTextEdit[i] = analysis.TextEdit{
+			Pos:     astutils.GetStartingPos(method),
+			End:     method.End(),
+			NewText: make([]byte, 0),
+		}
+		methodBytes, err := astutils.NodeToBytes(sh.Fset, method)
+		if err != nil {
+			return nil, err
+		}
+		addingMethodsTextEdit[i] = analysis.TextEdit{
+			Pos:     sh.StructMethods[0].Pos(),
+			NewText: slices.Concat(methodBytes, []byte("\n\n")),
+		}
+	}
+	for i, method := range sortedUnexported {
+		removingMethodsTextEdit[i+len(sortedExported)] = analysis.TextEdit{
+			Pos:     astutils.GetStartingPos(method),
+			End:     method.End(),
+			NewText: make([]byte, 0),
+		}
+		methodBytes, err := astutils.NodeToBytes(sh.Fset, method)
+		if err != nil {
+			return nil, err
+		}
+		addingMethodsTextEdit[i+len(sortedExported)] = analysis.TextEdit{
+			Pos:     sh.StructMethods[0].Pos(),
+			NewText: slices.Concat(methodBytes, []byte("\n\n")),
+		}
+	}
+	suggestedFixes := []analysis.SuggestedFix{
+		{
+			Message:   "Removing current methods",
+			TextEdits: removingMethodsTextEdit,
+		},
+		{
+			Message:   "Adding sorted methods",
+			TextEdits: addingMethodsTextEdit,
+		},
+	}
+
+	return suggestedFixes, nil
+}
+
+func (sh *StructHolder) copyAndSortMethods() (
+	sortedExported models.ExportedMethods,
+	sortedUnexported models.UnExportedMethods,
+) {
+	exported, unexported := astutils.SplitExportedUnExported(sh.StructMethods)
+	sortedExported = make([]*ast.FuncDecl, len(exported))
+	sortedUnexported = make([]*ast.FuncDecl, len(unexported))
+	copy(sortedExported, exported)
+	copy(sortedUnexported, unexported)
+	if sh.Features.IsEnabled(features.AlphabeticalCheck) {
+		slices.SortFunc(sortedExported, alphabeticalSortFunc)
+		slices.SortFunc(sortedUnexported, alphabeticalSortFunc)
+	}
+
+	return
 }
 
 func isSorted(typeSpec *ast.TypeSpec, funcDecls []*ast.FuncDecl) []analysis.Diagnostic {
@@ -192,5 +275,6 @@ func isSorted(typeSpec *ast.TypeSpec, funcDecls []*ast.FuncDecl) []analysis.Diag
 				diag.NewAdjacentStructMethodsNotSortedAlphabetically(typeSpec, funcDecls[i], funcDecls[i+1]))
 		}
 	}
+
 	return reports
 }

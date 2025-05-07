@@ -1,11 +1,7 @@
-package fix_constructor
+package constructor_check_fix
 
 type ConstructorBeforeStructWithComments struct {
 	Name string
-}
-
-func NewConstructorBeforeStructWithComments() *ConstructorBeforeStructWithComments {
-	return &ConstructorBeforeStructWithComments{Name: "John"}
 }
 
 // NewOtherConstructorAfterStructMethodsWithComments This constructor creates the
@@ -14,6 +10,10 @@ func NewConstructorBeforeStructWithComments() *ConstructorBeforeStructWithCommen
 func NewOtherConstructorBeforeStructWithComments() (m *ConstructorBeforeStructWithComments) {
 	m = &ConstructorBeforeStructWithComments{Name: "John"}
 	return
+}
+
+func NewConstructorBeforeStructWithComments() *ConstructorBeforeStructWithComments {
+	return &ConstructorBeforeStructWithComments{Name: "John"}
 }
 
 // GetName returns the name.
