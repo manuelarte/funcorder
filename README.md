@@ -8,7 +8,7 @@
     - [As A Golangci-lint linter](#as-a-golangci-lint-linter)
     - [Standalone application](#standalone-application)
   - [🚀 Features](#-features)
-    - [Check exported methods are placed before non-exported methods](#check-exported-methods-are-placed-before-non-exported-methods)
+    - [Check exported methods are placed before unexported methods](#check-exported-methods-are-placed-before-unexported-methods)
     - [Check `Constructors` functions are placed after struct declaration](#check-constructors-functions-are-placed-after-struct-declaration)
     - [Check Constructors/Methods are sorted alphabetically](#check-constructorsmethods-are-sorted-alphabetically)
   - [Resources](#resources)
@@ -32,7 +32,7 @@ linters:
       # Checks that constructors are placed after the structure declaration.
       # Default: true
       constructor: false
-      # Checks if the exported methods of a structure are placed before the non-exported ones.
+      # Checks if the exported methods of a structure are placed before the unexported ones.
       # Default: true
       struct-method: false
       # Checks if the constructors and/or structure methods are sorted alphabetically.
@@ -51,20 +51,21 @@ go install github.com/manuelarte/funcorder@latest
 And then use it with
 
 ```
-funcorder [-constructor=true|false] [-struct-method=true|false] [-alphabetical=true|false] ./...
+funcorder [-constructor=true|false] [-struct-method=true|false] [-alphabetical=true|false] [--fix] ./...
 ```
 
 Parameters:
 
 - `constructor`: `true|false` (default `true`) Checks that constructors are placed after the structure declaration.
-- `struct-method`: `true|false` (default `true`) Checks if the exported methods of a structure are placed before the non-exported ones.
+- `struct-method`: `true|false` (default `true`) Checks if the exported methods of a structure are placed before the unexported ones.
 - `alphabetical`: `true|false` (default `false`) Checks if the constructors and/or structure methods are sorted alphabetically.
+- `fix`: Fix the source code to adhere to the enabled features.
 
 ## 🚀 Features
 
-### Check exported methods are placed before non-exported methods
+### Check exported methods are placed before unexported methods
 
-This rule checks that the exported method are placed before the non-exported ones, e.g:
+This rule checks that the exported method are placed before the unexported ones, e.g:
 
 <table>
 <thead><tr><th>❌ Bad</th><th>✅ Good</th></tr></thead>
@@ -76,7 +77,7 @@ type MyStruct struct {
  Name string
 }
 
-// ❌ non-exported method 
+// ❌ unexported method 
 // placed before exported method
 func (m MyStruct) lenName() int { 
  return len(m.Name)
@@ -96,7 +97,7 @@ type MyStruct struct {
 }
 
 // ✅ exported methods before 
-// non-exported methods
+// unexported methods
 func (m MyStruct) GetName() string {
  return m.Name
 }
@@ -171,7 +172,7 @@ func NewMyStruct() MyStruct {
 This rule checks:
 
 - `Constructor` functions are sorted alphabetically (if `constructor` setting/parameter is `true`).
-- `Methods` are sorted alphabetically (if `struct-method` setting/parameter is `true`) for each group (exported and non-exported).
+- `Methods` are sorted alphabetically (if `struct-method` setting/parameter is `true`) for each group (exported and unexported).
 
 <table>
 <thead><tr><th>❌ Bad</th><th>✅ Good</th></tr></thead>
@@ -241,7 +242,7 @@ func (m MyStruct) GoodMorning() string {
     return "good morning"
 }
 
-// ✅ non-exported methods sorted alphabetically
+// ✅ unexported methods sorted alphabetically
 func (m MyStruct) bye() string {
     return "bye"
 }

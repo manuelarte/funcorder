@@ -1,4 +1,4 @@
-package simple
+package simple_alphabetical_fix
 
 func NewOtherMyStruct() (m *MyStruct) { // want "should be placed after the struct declaration"
 	m = &MyStruct{Name: "John"}

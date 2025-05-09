@@ -1,15 +1,15 @@
-package simple
+package struct_method_alphabetical_fix
 
-func NewOtherMyStruct() (m *MyStruct) { // want "should be placed after the struct declaration"
+func NewOtherMyStruct() (m *MyStruct) {
 	m = &MyStruct{Name: "John"}
 	return
 }
 
-func NewMyStruct() *MyStruct { // want "should be placed after the struct declaration"
+func NewMyStruct() *MyStruct {
 	return &MyStruct{Name: "John"}
 }
 
-func MustMyStruct() *MyStruct { // want `constructor \"MustMyStruct\" for struct \"MyStruct\" should be placed after the struct declaration`
+func MustMyStruct() *MyStruct {
 	return NewMyStruct()
 }
 

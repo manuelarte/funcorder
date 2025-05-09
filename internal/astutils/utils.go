@@ -1,7 +1,10 @@
 package astutils
 
 import (
+	"bytes"
 	"go/ast"
+	"go/format"
+	"go/token"
 	"strings"
 )
 
@@ -51,4 +54,38 @@ func GetIdent(expr ast.Expr) (*ast.Ident, bool) {
 	default:
 		return nil, false
 	}
+}
+
+// GetStartingPos returns the token starting position of the function
+// taking into account if there are comments.
+func GetStartingPos(function *ast.FuncDecl) token.Pos {
+	startingPos := function.Pos()
+	if function.Doc != nil {
+		startingPos = function.Doc.Pos()
+	}
+	return startingPos
+}
+
+// NodeToBytes convert the ast.Node in bytes.
+func NodeToBytes(fset *token.FileSet, node ast.Node) ([]byte, error) {
+	var buf bytes.Buffer
+	if err := format.Node(&buf, fset, node); err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
+}
+
+// SplitExportedUnexported split functions/methods based on whether they are exported or not.
+//
+//nolint:nonamedreturns // names serve as documentation
+func SplitExportedUnexported(funcDecls []*ast.FuncDecl) (exported []*ast.FuncDecl, unexported []*ast.FuncDecl) {
+	for _, f := range funcDecls {
+		if f.Name.IsExported() {
+			exported = append(exported, f)
+		} else {
+			unexported = append(unexported, f)
+		}
+	}
+
+	return exported, unexported
 }

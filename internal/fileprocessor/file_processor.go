@@ -2,44 +2,52 @@ package fileprocessor
 
 import (
 	"go/ast"
+	"go/token"
 
 	"golang.org/x/tools/go/analysis"
 
 	"github.com/manuelarte/funcorder/internal/astutils"
 	"github.com/manuelarte/funcorder/internal/features"
 	"github.com/manuelarte/funcorder/internal/models"
+	"github.com/manuelarte/funcorder/internal/structholder"
 )
 
 // FileProcessor Holder to store all the functions that are potential to be constructors and all the structs.
 type FileProcessor struct {
-	structs  map[string]*models.StructHolder
+	fset     *token.FileSet
+	structs  map[string]*structholder.StructHolder
 	features features.Feature
 }
 
 // NewFileProcessor creates a new file processor.
-func NewFileProcessor(checkers features.Feature) *FileProcessor {
+func NewFileProcessor(fset *token.FileSet, checkers features.Feature) *FileProcessor {
 	return &FileProcessor{
-		structs:  make(map[string]*models.StructHolder),
+		fset:     fset,
+		structs:  make(map[string]*structholder.StructHolder),
 		features: checkers,
 	}
 }
 
 // Analyze check whether the order of the methods in the constructor is correct.
-func (fp *FileProcessor) Analyze() []analysis.Diagnostic {
+func (fp *FileProcessor) Analyze() ([]analysis.Diagnostic, error) {
 	var reports []analysis.Diagnostic
 
 	for _, sh := range fp.structs {
 		// filter out structs that are not declared inside that file
 		if sh.Struct != nil {
-			reports = append(reports, sh.Analyze()...)
+			newReports, err := sh.Analyze()
+			if err != nil {
+				return nil, err
+			}
+			reports = append(reports, newReports...)
 		}
 	}
 
-	return reports
+	return reports, nil
 }
 
 func (fp *FileProcessor) NewFileNode(_ *ast.File) {
-	fp.structs = make(map[string]*models.StructHolder)
+	fp.structs = make(map[string]*structholder.StructHolder)
 }
 
 func (fp *FileProcessor) NewFuncDecl(n *ast.FuncDecl) {
@@ -68,12 +76,15 @@ func (fp *FileProcessor) addMethod(st string, n *ast.FuncDecl) {
 	sh.AddMethod(n)
 }
 
-func (fp *FileProcessor) getOrCreate(structName string) *models.StructHolder {
+func (fp *FileProcessor) getOrCreate(structName string) *structholder.StructHolder {
 	if holder, ok := fp.structs[structName]; ok {
 		return holder
 	}
 
-	created := &models.StructHolder{Features: fp.features}
+	created := &structholder.StructHolder{
+		Fset:     fp.fset,
+		Features: fp.features,
+	}
 	fp.structs[structName] = created
 
 	return created
