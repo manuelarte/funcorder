@@ -2,36 +2,32 @@ package internal
 
 import (
 	"go/ast"
-	"go/token"
 
 	"golang.org/x/tools/go/analysis"
 )
 
 // FileProcessor Holder to store all the functions that are potential to be constructors and all the structs.
 type FileProcessor struct {
-	fset     *token.FileSet
-	content  []byte
 	structs  map[string]*StructHolder
 	features Feature
 }
 
 // NewFileProcessor creates a new file processor.
-func NewFileProcessor(fset *token.FileSet, checkers Feature) *FileProcessor {
+func NewFileProcessor(checkers Feature) *FileProcessor {
 	return &FileProcessor{
-		fset:     fset,
 		structs:  make(map[string]*StructHolder),
 		features: checkers,
 	}
 }
 
 // Analyze check whether the order of the methods in the constructor is correct.
-func (fp *FileProcessor) Analyze() ([]analysis.Diagnostic, error) {
+func (fp *FileProcessor) Analyze(pass *analysis.Pass) ([]analysis.Diagnostic, error) {
 	var reports []analysis.Diagnostic
 
 	for _, sh := range fp.structs {
 		// filter out structs that are not declared inside that file
 		if sh.Struct != nil {
-			newReports, err := sh.Analyze(fp.content)
+			newReports, err := sh.Analyze(pass)
 			if err != nil {
 				return nil, err
 			}
@@ -43,9 +39,8 @@ func (fp *FileProcessor) Analyze() ([]analysis.Diagnostic, error) {
 	return reports, nil
 }
 
-func (fp *FileProcessor) NewFileNode(_ *ast.File, content []byte) {
+func (fp *FileProcessor) NewFileNode(_ *ast.File) {
 	fp.structs = make(map[string]*StructHolder)
-	fp.content = content
 }
 
 func (fp *FileProcessor) NewFuncDecl(n *ast.FuncDecl) {
@@ -80,7 +75,6 @@ func (fp *FileProcessor) getOrCreate(structName string) *StructHolder {
 	}
 
 	created := &StructHolder{
-		Fset:     fp.fset,
 		Features: fp.features,
 	}
 	fp.structs[structName] = created

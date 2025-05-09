@@ -4,6 +4,8 @@ import (
 	"go/ast"
 	"go/token"
 	"strings"
+
+	"golang.org/x/tools/go/analysis"
 )
 
 func FuncCanBeConstructor(n *ast.FuncDecl) bool {
@@ -54,37 +56,29 @@ func GetIdent(expr ast.Expr) (*ast.Ident, bool) {
 	}
 }
 
-// GetStartingPos returns the token starting position of the function
-// taking into account if there are comments.
-func GetStartingPos(function *ast.FuncDecl) token.Pos {
-	startingPos := function.Pos()
-	if function.Doc != nil {
-		startingPos = function.Doc.Pos()
+func GetStartingPos(node ast.Node) token.Pos {
+	fn, ok := node.(*ast.FuncDecl)
+	if !ok {
+		return node.Pos()
 	}
 
-	return startingPos
+	if fn.Doc != nil {
+		return fn.Doc.Pos()
+	}
+
+	return fn.Pos()
 }
 
 // NodeToBytes convert the ast.Node in bytes.
-func NodeToBytes(content []byte, fset *token.FileSet, node ast.Node) ([]byte, error) {
-	startingPos := node.Pos()
-	endingPos := node.End()
-	if f, ok := node.(*ast.FuncDecl); ok {
-		startingPos = GetStartingPos(f)
-	}
+func NodeToBytes(pass *analysis.Pass, node ast.Node) ([]byte, error) {
+	start := pass.Fset.Position(GetStartingPos(node))
 
-	startOffset := fset.Position(startingPos).Offset
-	endingOffset := fset.Position(endingPos).Offset
-	byteArray := content[startOffset:endingOffset]
-	//fmt.Printf("%s\n", byteArray)
-
-	return byteArray, nil
-	/*var buf bytes.Buffer
-	if err := format.Node(&buf, fset, node); err != nil {
+	src, err := pass.ReadFile(start.Filename)
+	if err != nil {
 		return nil, err
 	}
 
-	return buf.Bytes(), nil*/
+	return src[start.Offset:pass.Fset.Position(node.End()).Offset], nil
 }
 
 // SplitExportedUnexported split functions/methods based on whether they are exported or not.

@@ -3,7 +3,6 @@ package internal
 import (
 	"cmp"
 	"go/ast"
-	"go/token"
 	"slices"
 	"strings"
 
@@ -17,8 +16,6 @@ type (
 
 // StructHolder contains all the information around a Go struct.
 type StructHolder struct {
-	// The fileset
-	Fset *token.FileSet
 	// The features to be analyzed
 	Features Feature
 
@@ -41,7 +38,7 @@ func (sh *StructHolder) AddMethod(fn *ast.FuncDecl) {
 }
 
 // Analyze applies the linter to the struct holder.
-func (sh *StructHolder) Analyze(content []byte) ([]analysis.Diagnostic, error) {
+func (sh *StructHolder) Analyze(pass *analysis.Pass) ([]analysis.Diagnostic, error) {
 	// TODO maybe sort constructors and then report also, like NewXXX before MustXXX
 	slices.SortFunc(sh.StructMethods, func(a, b *ast.FuncDecl) int {
 		return cmp.Compare(a.Pos(), b.Pos())
@@ -50,7 +47,7 @@ func (sh *StructHolder) Analyze(content []byte) ([]analysis.Diagnostic, error) {
 	var reports []analysis.Diagnostic
 
 	if sh.Features.IsEnabled(ConstructorCheck) {
-		newReports, err := sh.analyzeConstructor(content)
+		newReports, err := sh.analyzeConstructor(pass)
 		if err != nil {
 			return nil, err
 		}
@@ -59,7 +56,7 @@ func (sh *StructHolder) Analyze(content []byte) ([]analysis.Diagnostic, error) {
 	}
 
 	if sh.Features.IsEnabled(StructMethodCheck) {
-		newReports, err := sh.analyzeStructMethod(content)
+		newReports, err := sh.analyzeStructMethod(pass)
 		if err != nil {
 			return nil, err
 		}
@@ -71,7 +68,7 @@ func (sh *StructHolder) Analyze(content []byte) ([]analysis.Diagnostic, error) {
 	return reports, nil
 }
 
-func (sh *StructHolder) analyzeConstructor(content []byte) ([]analysis.Diagnostic, error) {
+func (sh *StructHolder) analyzeConstructor(pass *analysis.Pass) ([]analysis.Diagnostic, error) {
 	var reports []analysis.Diagnostic
 
 	for i, constructor := range sh.Constructors {
@@ -92,7 +89,7 @@ func (sh *StructHolder) analyzeConstructor(content []byte) ([]analysis.Diagnosti
 
 		// propose fix
 		if len(reports) > 0 {
-			suggestedFixes, err := sh.suggestConstructorFix(content)
+			suggestedFixes, err := sh.suggestConstructorFix(pass)
 			if err != nil {
 				return nil, err
 			}
@@ -104,7 +101,7 @@ func (sh *StructHolder) analyzeConstructor(content []byte) ([]analysis.Diagnosti
 	return reports, nil
 }
 
-func (sh *StructHolder) analyzeStructMethod(content []byte) ([]analysis.Diagnostic, error) {
+func (sh *StructHolder) analyzeStructMethod(pass *analysis.Pass) ([]analysis.Diagnostic, error) {
 	var lastExportedMethod *ast.FuncDecl
 
 	for _, m := range sh.StructMethods {
@@ -142,7 +139,7 @@ func (sh *StructHolder) analyzeStructMethod(content []byte) ([]analysis.Diagnost
 	}
 
 	if len(reports) > 0 {
-		suggestedFixes, err := sh.suggestMethodFix(content)
+		suggestedFixes, err := sh.suggestMethodFix(pass)
 		if err != nil {
 			return nil, err
 		}
@@ -153,7 +150,7 @@ func (sh *StructHolder) analyzeStructMethod(content []byte) ([]analysis.Diagnost
 	return reports, nil
 }
 
-func (sh *StructHolder) suggestConstructorFix(content []byte) ([]analysis.SuggestedFix, error) {
+func (sh *StructHolder) suggestConstructorFix(pass *analysis.Pass) ([]analysis.SuggestedFix, error) {
 	sortedConstructors := sh.copyAndSortConstructors()
 	removingConstructorsTextEdit := make([]analysis.TextEdit, len(sh.Constructors))
 	addingConstructorsTextEdit := make([]analysis.TextEdit, len(sh.Constructors))
@@ -165,7 +162,7 @@ func (sh *StructHolder) suggestConstructorFix(content []byte) ([]analysis.Sugges
 			NewText: make([]byte, 0),
 		}
 
-		constructorBytes, err := NodeToBytes(content, sh.Fset, constructor)
+		constructorBytes, err := NodeToBytes(pass, constructor)
 		if err != nil {
 			return nil, err
 		}
@@ -197,7 +194,7 @@ func (sh *StructHolder) copyAndSortConstructors() []*ast.FuncDecl {
 	return sortedConstructors
 }
 
-func (sh *StructHolder) suggestMethodFix(content []byte) ([]analysis.SuggestedFix, error) {
+func (sh *StructHolder) suggestMethodFix(pass *analysis.Pass) ([]analysis.SuggestedFix, error) {
 	sortedExported, sortedUnexported := sh.copyAndSortMethods()
 
 	removingMethodsTextEdit := make([]analysis.TextEdit, len(sh.StructMethods))
@@ -210,7 +207,7 @@ func (sh *StructHolder) suggestMethodFix(content []byte) ([]analysis.SuggestedFi
 			NewText: make([]byte, 0),
 		}
 
-		methodBytes, err := NodeToBytes(content, sh.Fset, method)
+		methodBytes, err := NodeToBytes(pass, method)
 		if err != nil {
 			return nil, err
 		}
@@ -228,7 +225,7 @@ func (sh *StructHolder) suggestMethodFix(content []byte) ([]analysis.SuggestedFi
 			NewText: make([]byte, 0),
 		}
 
-		methodBytes, err := NodeToBytes(content, sh.Fset, method)
+		methodBytes, err := NodeToBytes(pass, method)
 		if err != nil {
 			return nil, err
 		}

@@ -57,7 +57,7 @@ func (f *funcorder) run(pass *analysis.Pass) (any, error) {
 		enabledCheckers.Enable(internal.AlphabeticalCheck)
 	}
 
-	fp := internal.NewFileProcessor(pass.Fset, enabledCheckers)
+	fp := internal.NewFileProcessor(enabledCheckers)
 
 	insp, found := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
 	if !found {
@@ -80,7 +80,7 @@ func (f *funcorder) run(pass *analysis.Pass) (any, error) {
 
 		switch node := n.(type) {
 		case *ast.File:
-			reports, err := fp.Analyze()
+			reports, err := fp.Analyze(pass)
 			if err != nil {
 				errProcessing = err
 				return
@@ -89,13 +89,8 @@ func (f *funcorder) run(pass *analysis.Pass) (any, error) {
 			for _, report := range reports {
 				pass.Report(report)
 			}
-			file := pass.Fset.File(node.Pos())
-			bytes, err := pass.ReadFile(file.Name())
-			if err != nil {
-				errProcessing = err
-				return
-			}
-			fp.NewFileNode(node, bytes)
+
+			fp.NewFileNode(node)
 
 		case *ast.FuncDecl:
 			fp.NewFuncDecl(node)
@@ -109,7 +104,7 @@ func (f *funcorder) run(pass *analysis.Pass) (any, error) {
 		return nil, errProcessing
 	}
 
-	reports, err := fp.Analyze()
+	reports, err := fp.Analyze(pass)
 	if err != nil {
 		return nil, err
 	}
