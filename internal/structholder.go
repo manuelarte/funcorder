@@ -10,11 +10,6 @@ import (
 	"golang.org/x/tools/go/analysis"
 )
 
-//nolint:gochecknoglobals // constant
-var alphabeticalSortFunc = func(a, b *ast.FuncDecl) int {
-	return strings.Compare(a.Name.Name, b.Name.Name)
-}
-
 type ExportedMethods []*ast.FuncDecl
 type UnexportedMethods []*ast.FuncDecl
 
@@ -185,7 +180,7 @@ func (sh *StructHolder) copyAndSortConstructors() []*ast.FuncDecl {
 	sortedConstructors := make([]*ast.FuncDecl, len(sh.Constructors))
 	copy(sortedConstructors, sh.Constructors)
 	if sh.Features.IsEnabled(AlphabeticalCheck) {
-		slices.SortFunc(sortedConstructors, alphabeticalSortFunc)
+		slices.SortFunc(sortedConstructors, alphabeticalSort)
 	}
 
 	return sortedConstructors
@@ -242,8 +237,8 @@ func (sh *StructHolder) copyAndSortMethods() (ExportedMethods, UnexportedMethods
 	copy(sortedExported, exported)
 	copy(sortedUnexported, unexported)
 	if sh.Features.IsEnabled(AlphabeticalCheck) {
-		slices.SortFunc(sortedExported, alphabeticalSortFunc)
-		slices.SortFunc(sortedUnexported, alphabeticalSortFunc)
+		slices.SortFunc(sortedExported, alphabeticalSort)
+		slices.SortFunc(sortedUnexported, alphabeticalSort)
 	}
 
 	return sortedExported, sortedUnexported
@@ -264,4 +259,8 @@ func sortDiagnostics(typeSpec *ast.TypeSpec, funcDecls []*ast.FuncDecl) []analys
 	}
 
 	return reports
+}
+
+func alphabeticalSort(a, b *ast.FuncDecl) int {
+	return strings.Compare(a.Name.Name, b.Name.Name)
 }
