@@ -10,6 +10,7 @@ import (
 // FileProcessor Holder to store all the functions that are potential to be constructors and all the structs.
 type FileProcessor struct {
 	fset     *token.FileSet
+	content  []byte
 	structs  map[string]*StructHolder
 	features Feature
 }
@@ -30,7 +31,7 @@ func (fp *FileProcessor) Analyze() ([]analysis.Diagnostic, error) {
 	for _, sh := range fp.structs {
 		// filter out structs that are not declared inside that file
 		if sh.Struct != nil {
-			newReports, err := sh.Analyze()
+			newReports, err := sh.Analyze(fp.content)
 			if err != nil {
 				return nil, err
 			}
@@ -42,8 +43,9 @@ func (fp *FileProcessor) Analyze() ([]analysis.Diagnostic, error) {
 	return reports, nil
 }
 
-func (fp *FileProcessor) NewFileNode(_ *ast.File) {
+func (fp *FileProcessor) NewFileNode(_ *ast.File, content []byte) {
 	fp.structs = make(map[string]*StructHolder)
+	fp.content = content
 }
 
 func (fp *FileProcessor) NewFuncDecl(n *ast.FuncDecl) {

@@ -3,7 +3,6 @@ package internal
 import (
 	"go/ast"
 	"go/token"
-	"os"
 	"strings"
 )
 
@@ -67,21 +66,16 @@ func GetStartingPos(function *ast.FuncDecl) token.Pos {
 }
 
 // NodeToBytes convert the ast.Node in bytes.
-func NodeToBytes(fset *token.FileSet, node ast.Node) ([]byte, error) {
+func NodeToBytes(content []byte, fset *token.FileSet, node ast.Node) ([]byte, error) {
 	startingPos := node.Pos()
 	endingPos := node.End()
 	if f, ok := node.(*ast.FuncDecl); ok {
 		startingPos = GetStartingPos(f)
 	}
 
-	f := fset.File(startingPos)
-	src, err := os.ReadFile(f.Name())
-	if err != nil {
-		return nil, err
-	}
 	startOffset := fset.Position(startingPos).Offset
 	endingOffset := fset.Position(endingPos).Offset
-	byteArray := src[startOffset:endingOffset]
+	byteArray := content[startOffset:endingOffset]
 	//fmt.Printf("%s\n", byteArray)
 
 	return byteArray, nil

@@ -89,8 +89,13 @@ func (f *funcorder) run(pass *analysis.Pass) (any, error) {
 			for _, report := range reports {
 				pass.Report(report)
 			}
-
-			fp.NewFileNode(node)
+			file := pass.Fset.File(node.Pos())
+			bytes, err := pass.ReadFile(file.Name())
+			if err != nil {
+				errProcessing = err
+				return
+			}
+			fp.NewFileNode(node, bytes)
 
 		case *ast.FuncDecl:
 			fp.NewFuncDecl(node)
