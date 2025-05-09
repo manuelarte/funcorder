@@ -133,8 +133,8 @@ func (sh *StructHolder) analyzeStructMethod(pass *analysis.Pass) ([]analysis.Dia
 	if sh.Features.IsEnabled(AlphabeticalCheck) {
 		exported, unexported := SplitExportedUnexported(sh.StructMethods)
 		reports = slices.Concat(reports,
-			sortDiagnostics(sh.Struct, exported),
-			sortDiagnostics(sh.Struct, unexported),
+			createSortDiagnostics(sh.Struct, exported),
+			createSortDiagnostics(sh.Struct, unexported),
 		)
 	}
 
@@ -151,11 +151,10 @@ func (sh *StructHolder) analyzeStructMethod(pass *analysis.Pass) ([]analysis.Dia
 }
 
 func (sh *StructHolder) suggestConstructorFix(pass *analysis.Pass) ([]analysis.SuggestedFix, error) {
-	sortedConstructors := sh.copyAndSortConstructors()
 	removingConstructorsTextEdit := make([]analysis.TextEdit, len(sh.Constructors))
 	addingConstructorsTextEdit := make([]analysis.TextEdit, len(sh.Constructors))
 
-	for i, constructor := range sortedConstructors {
+	for i, constructor := range sh.sortedConstructors() {
 		removingConstructorsTextEdit[i] = analysis.TextEdit{
 			Pos:     GetStartingPos(constructor),
 			End:     constructor.End(),
@@ -183,24 +182,28 @@ func (sh *StructHolder) suggestConstructorFix(pass *analysis.Pass) ([]analysis.S
 	return suggestedFixes, nil
 }
 
-func (sh *StructHolder) copyAndSortConstructors() []*ast.FuncDecl {
-	sortedConstructors := make([]*ast.FuncDecl, len(sh.Constructors))
-	copy(sortedConstructors, sh.Constructors)
+func (sh *StructHolder) sortedConstructors() []*ast.FuncDecl {
+	constructors := slices.Clone(sh.Constructors)
 
 	if sh.Features.IsEnabled(AlphabeticalCheck) {
-		slices.SortFunc(sortedConstructors, alphabeticalSort)
+		slices.SortFunc(constructors, alphabeticalSort)
 	}
 
-	return sortedConstructors
+	return constructors
 }
 
 func (sh *StructHolder) suggestMethodFix(pass *analysis.Pass) ([]analysis.SuggestedFix, error) {
-	sortedExported, sortedUnexported := sh.copyAndSortMethods()
+	exported, unexported := SplitExportedUnexported(sh.StructMethods)
+
+	if sh.Features.IsEnabled(AlphabeticalCheck) {
+		slices.SortFunc(exported, alphabeticalSort)
+		slices.SortFunc(unexported, alphabeticalSort)
+	}
 
 	removingMethodsTextEdit := make([]analysis.TextEdit, len(sh.StructMethods))
 	addingMethodsTextEdit := make([]analysis.TextEdit, len(sh.StructMethods))
 
-	for i, method := range sortedExported {
+	for i, method := range exported {
 		removingMethodsTextEdit[i] = analysis.TextEdit{
 			Pos:     GetStartingPos(method),
 			End:     method.End(),
@@ -218,8 +221,8 @@ func (sh *StructHolder) suggestMethodFix(pass *analysis.Pass) ([]analysis.Sugges
 		}
 	}
 
-	for i, method := range sortedUnexported {
-		removingMethodsTextEdit[i+len(sortedExported)] = analysis.TextEdit{
+	for i, method := range unexported {
+		removingMethodsTextEdit[i+len(exported)] = analysis.TextEdit{
 			Pos:     GetStartingPos(method),
 			End:     method.End(),
 			NewText: make([]byte, 0),
@@ -230,7 +233,7 @@ func (sh *StructHolder) suggestMethodFix(pass *analysis.Pass) ([]analysis.Sugges
 			return nil, err
 		}
 
-		addingMethodsTextEdit[i+len(sortedExported)] = analysis.TextEdit{
+		addingMethodsTextEdit[i+len(exported)] = analysis.TextEdit{
 			Pos:     GetStartingPos(sh.StructMethods[0]),
 			NewText: slices.Concat(methodBytes, []byte("\n\n")),
 		}
@@ -246,23 +249,7 @@ func (sh *StructHolder) suggestMethodFix(pass *analysis.Pass) ([]analysis.Sugges
 	return suggestedFixes, nil
 }
 
-func (sh *StructHolder) copyAndSortMethods() (ExportedMethods, UnexportedMethods) {
-	exported, unexported := SplitExportedUnexported(sh.StructMethods)
-	sortedExported := make([]*ast.FuncDecl, len(exported))
-	sortedUnexported := make([]*ast.FuncDecl, len(unexported))
-
-	copy(sortedExported, exported)
-	copy(sortedUnexported, unexported)
-
-	if sh.Features.IsEnabled(AlphabeticalCheck) {
-		slices.SortFunc(sortedExported, alphabeticalSort)
-		slices.SortFunc(sortedUnexported, alphabeticalSort)
-	}
-
-	return sortedExported, sortedUnexported
-}
-
-func sortDiagnostics(typeSpec *ast.TypeSpec, funcDecls []*ast.FuncDecl) []analysis.Diagnostic {
+func createSortDiagnostics(typeSpec *ast.TypeSpec, funcDecls []*ast.FuncDecl) []analysis.Diagnostic {
 	var reports []analysis.Diagnostic
 
 	for i := range funcDecls {

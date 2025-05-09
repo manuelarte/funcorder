@@ -113,6 +113,6 @@ func (f *funcorder) run(pass *analysis.Pass) (any, error) {
 		pass.Report(report)
 	}
 
-	//nolint:nilnil //any, error
+	//nolint:nilnil // any, error
 	return nil, nil
 }
