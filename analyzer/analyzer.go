@@ -71,22 +71,10 @@ func (f *funcorder) run(pass *analysis.Pass) (any, error) {
 		(*ast.TypeSpec)(nil),
 	}
 
-	var errProcessing error
-
 	insp.Preorder(nodeFilter, func(n ast.Node) {
-		if errProcessing != nil {
-			return
-		}
-
 		switch node := n.(type) {
 		case *ast.File:
-			reports, err := fp.Analyze()
-			if err != nil {
-				errProcessing = err
-				return
-			}
-
-			for _, report := range reports {
+			for _, report := range fp.Analyze() {
 				pass.Report(report)
 			}
 
@@ -100,16 +88,7 @@ func (f *funcorder) run(pass *analysis.Pass) (any, error) {
 		}
 	})
 
-	if errProcessing != nil {
-		return nil, errProcessing
-	}
-
-	reports, err := fp.Analyze()
-	if err != nil {
-		return nil, err
-	}
-
-	for _, report := range reports {
+	for _, report := range fp.Analyze() {
 		pass.Report(report)
 	}
 
