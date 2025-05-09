@@ -9,4 +9,5 @@ require (
 	golang.org/x/sync v0.13.0 // indirect
 )
 
-retract v0.4.0 // major bug found when introducing --fix, Issue 32
+// Major bug found when introducing suggested fixes, issue #32
+retract v0.4.0
