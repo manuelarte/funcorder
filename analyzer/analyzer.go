@@ -7,8 +7,7 @@ import (
 	"golang.org/x/tools/go/analysis/passes/inspect"
 	"golang.org/x/tools/go/ast/inspector"
 
-	"github.com/manuelarte/funcorder/internal/features"
-	"github.com/manuelarte/funcorder/internal/fileprocessor"
+	"github.com/manuelarte/funcorder/internal"
 )
 
 const (
@@ -45,20 +44,20 @@ type funcorder struct {
 }
 
 func (f *funcorder) run(pass *analysis.Pass) (any, error) {
-	var enabledCheckers features.Feature
+	var enabledCheckers internal.Feature
 	if f.constructorCheck {
-		enabledCheckers.Enable(features.ConstructorCheck)
+		enabledCheckers.Enable(internal.ConstructorCheck)
 	}
 
 	if f.structMethodCheck {
-		enabledCheckers.Enable(features.StructMethodCheck)
+		enabledCheckers.Enable(internal.StructMethodCheck)
 	}
 
 	if f.alphabeticalCheck {
-		enabledCheckers.Enable(features.AlphabeticalCheck)
+		enabledCheckers.Enable(internal.AlphabeticalCheck)
 	}
 
-	fp := fileprocessor.NewFileProcessor(pass.Fset, enabledCheckers)
+	fp := internal.NewFileProcessor(pass.Fset, enabledCheckers)
 
 	insp, found := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
 	if !found {
