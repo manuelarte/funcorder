@@ -1,10 +1,9 @@
 package internal
 
 import (
-	"bytes"
 	"go/ast"
-	"go/format"
 	"go/token"
+	"os"
 	"strings"
 )
 
@@ -69,12 +68,29 @@ func GetStartingPos(function *ast.FuncDecl) token.Pos {
 
 // NodeToBytes convert the ast.Node in bytes.
 func NodeToBytes(fset *token.FileSet, node ast.Node) ([]byte, error) {
-	var buf bytes.Buffer
+	startingPos := node.Pos()
+	endingPos := node.End()
+	if f, ok := node.(*ast.FuncDecl); ok {
+		startingPos = GetStartingPos(f)
+	}
+
+	f := fset.File(startingPos)
+	src, err := os.ReadFile(f.Name())
+	if err != nil {
+		return nil, err
+	}
+	startOffset := fset.Position(startingPos).Offset
+	endingOffset := fset.Position(endingPos).Offset
+	byteArray := src[startOffset:endingOffset]
+	//fmt.Printf("%s\n", byteArray)
+
+	return byteArray, nil
+	/*var buf bytes.Buffer
 	if err := format.Node(&buf, fset, node); err != nil {
 		return nil, err
 	}
 
-	return buf.Bytes(), nil
+	return buf.Bytes(), nil*/
 }
 
 // SplitExportedUnexported split functions/methods based on whether they are exported or not.

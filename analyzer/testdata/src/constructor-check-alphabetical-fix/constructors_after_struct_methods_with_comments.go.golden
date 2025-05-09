@@ -1,0 +1,28 @@
+package constructor_check_alphabetical_fix
+
+type ConstructorAfterStructMethodsWithComments struct {
+	Name string
+}
+
+func NewConstructorAfterStructMethodsWithComments() *ConstructorAfterStructMethodsWithComments {
+	return &ConstructorAfterStructMethodsWithComments{Name: "John"}
+}
+
+// NewOtherConstructorAfterStructMethodsWithComments This constructor creates the
+// struct ConstructorAfterStructMethodsWithComments
+// with a named return
+func NewOtherConstructorAfterStructMethodsWithComments() (m *ConstructorAfterStructMethodsWithComments) {
+	m = &ConstructorAfterStructMethodsWithComments{Name: "John"}
+	return
+}
+
+// GetName returns the name.
+func (m ConstructorAfterStructMethodsWithComments) GetName() string {
+	return m.Name
+}
+
+// SetName sets the name
+// multi line comment
+func (m *ConstructorAfterStructMethodsWithComments) SetName(name string) {
+	m.Name = name
+}

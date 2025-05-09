@@ -1,0 +1,10 @@
+package bug_comments_fix
+
+type ConstructorComments struct {
+	Name string
+}
+
+func NewConstructorComments() *ConstructorComments { // want `constructor "NewConstructorComments" for struct "ConstructorComments" should be placed after the struct declaration`
+	// foo is foo
+	return &ConstructorComments{Name: "John"}
+}

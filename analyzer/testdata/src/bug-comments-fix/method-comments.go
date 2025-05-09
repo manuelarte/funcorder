@@ -1,0 +1,15 @@
+package bug_comments_fix
+
+type CommentMethod struct {
+	n string
+}
+
+func (m CommentMethod) name() string { // want `method "name" for struct "CommentMethod" should be placed after the exported method "Name"`
+	// foo is foo
+	return m.n
+}
+
+func (m CommentMethod) Name(name string) {
+	// foo is foo
+	m.n = name
+}

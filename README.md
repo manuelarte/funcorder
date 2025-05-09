@@ -51,7 +51,7 @@ go install github.com/manuelarte/funcorder@latest
 And then use it with
 
 ```
-funcorder [-constructor=true|false] [-struct-method=true|false] [-alphabetical=true|false] ./...
+funcorder [-constructor=true|false] [-struct-method=true|false] [-alphabetical=true|false] [--fix] ./...
 ```
 
 Parameters:
@@ -59,6 +59,7 @@ Parameters:
 - `constructor`: `true|false` (default `true`) Checks that constructors are placed after the structure declaration.
 - `struct-method`: `true|false` (default `true`) Checks if the exported methods of a structure are placed before the unexported ones.
 - `alphabetical`: `true|false` (default `false`) Checks if the constructors and/or structure methods are sorted alphabetically.
+- `fix`: Fix the source code to adhere to the enabled features.
 
 ## 🚀 Features
 
