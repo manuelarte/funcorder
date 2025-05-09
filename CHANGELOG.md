@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Adding `alphabetical` option.
+- Added `alphabetical` option.
 
 ## [v0.2.1] 2025-03-28
 
