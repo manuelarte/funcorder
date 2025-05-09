@@ -34,6 +34,7 @@ func (fp *FileProcessor) Analyze() ([]analysis.Diagnostic, error) {
 			if err != nil {
 				return nil, err
 			}
+
 			reports = append(reports, newReports...)
 		}
 	}

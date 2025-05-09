@@ -63,6 +63,7 @@ func GetStartingPos(function *ast.FuncDecl) token.Pos {
 	if function.Doc != nil {
 		startingPos = function.Doc.Pos()
 	}
+
 	return startingPos
 }
 
@@ -72,13 +73,14 @@ func NodeToBytes(fset *token.FileSet, node ast.Node) ([]byte, error) {
 	if err := format.Node(&buf, fset, node); err != nil {
 		return nil, err
 	}
+
 	return buf.Bytes(), nil
 }
 
 // SplitExportedUnexported split functions/methods based on whether they are exported or not.
 //
 //nolint:nonamedreturns // names serve as documentation
-func SplitExportedUnexported(funcDecls []*ast.FuncDecl) (exported []*ast.FuncDecl, unexported []*ast.FuncDecl) {
+func SplitExportedUnexported(funcDecls []*ast.FuncDecl) (exported, unexported []*ast.FuncDecl) {
 	for _, f := range funcDecls {
 		if f.Name.IsExported() {
 			exported = append(exported, f)
