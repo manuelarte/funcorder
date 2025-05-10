@@ -78,7 +78,14 @@ func NodeToBytes(pass *analysis.Pass, node ast.Node) ([]byte, error) {
 		return nil, err
 	}
 
-	return src[start.Offset:pass.Fset.Position(node.End()).Offset], nil
+	startOffset := start.Offset
+	endOffset := pass.Fset.Position(node.End()).Offset
+
+	if startOffset > len(src) || endOffset > len(src) {
+		return nil, ErrIndexOutOfBounds
+	}
+
+	return src[start.Offset:endOffset], nil
 }
 
 // SplitExportedUnexported split functions/methods based on whether they are exported or not.

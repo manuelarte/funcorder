@@ -21,22 +21,18 @@ func NewFileProcessor(checkers Feature) *FileProcessor {
 }
 
 // Analyze check whether the order of the methods in the constructor is correct.
-func (fp *FileProcessor) Analyze(pass *analysis.Pass) ([]analysis.Diagnostic, error) {
-	var reports []analysis.Diagnostic
-
+func (fp *FileProcessor) Analyze(pass *analysis.Pass) error {
 	for _, sh := range fp.structs {
 		// filter out structs that are not declared inside that file
 		if sh.Struct != nil {
-			newReports, err := sh.Analyze(pass)
+			err := sh.Analyze(pass)
 			if err != nil {
-				return nil, err
+				return err
 			}
-
-			reports = append(reports, newReports...)
 		}
 	}
 
-	return reports, nil
+	return nil
 }
 
 func (fp *FileProcessor) NewFileNode(_ *ast.File) {

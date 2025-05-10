@@ -80,14 +80,10 @@ func (f *funcorder) run(pass *analysis.Pass) (any, error) {
 
 		switch node := n.(type) {
 		case *ast.File:
-			reports, err := fp.Analyze(pass)
+			err := fp.Analyze(pass)
 			if err != nil {
 				errProcessing = err
 				return
-			}
-
-			for _, report := range reports {
-				pass.Report(report)
 			}
 
 			fp.NewFileNode(node)
@@ -104,13 +100,9 @@ func (f *funcorder) run(pass *analysis.Pass) (any, error) {
 		return nil, errProcessing
 	}
 
-	reports, err := fp.Analyze(pass)
+	err := fp.Analyze(pass)
 	if err != nil {
 		return nil, err
-	}
-
-	for _, report := range reports {
-		pass.Report(report)
 	}
 
 	//nolint:nilnil // any, error

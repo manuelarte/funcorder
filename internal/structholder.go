@@ -38,34 +38,36 @@ func (sh *StructHolder) AddMethod(fn *ast.FuncDecl) {
 }
 
 // Analyze applies the linter to the struct holder.
-func (sh *StructHolder) Analyze(pass *analysis.Pass) ([]analysis.Diagnostic, error) {
+func (sh *StructHolder) Analyze(pass *analysis.Pass) error {
 	// TODO maybe sort constructors and then report also, like NewXXX before MustXXX
 	slices.SortFunc(sh.StructMethods, func(a, b *ast.FuncDecl) int {
 		return cmp.Compare(a.Pos(), b.Pos())
 	})
 
-	var reports []analysis.Diagnostic
-
 	if sh.Features.IsEnabled(ConstructorCheck) {
 		newReports, err := sh.analyzeConstructor(pass)
 		if err != nil {
-			return nil, err
+			return err
 		}
 
-		reports = append(reports, newReports...)
+		for _, report := range newReports {
+			pass.Report(report)
+		}
 	}
 
 	if sh.Features.IsEnabled(StructMethodCheck) {
 		newReports, err := sh.analyzeStructMethod(pass)
 		if err != nil {
-			return nil, err
+			return err
 		}
 
-		reports = append(reports, newReports...)
+		for _, report := range newReports {
+			pass.Report(report)
+		}
 	}
 
 	// TODO also check that the methods are declared after the struct
-	return reports, nil
+	return nil
 }
 
 func (sh *StructHolder) analyzeConstructor(pass *analysis.Pass) ([]analysis.Diagnostic, error) {
