@@ -1,11 +1,12 @@
 package internal
 
 import (
-	"bytes"
+	"errors"
 	"go/ast"
-	"go/format"
 	"go/token"
 	"strings"
+
+	"golang.org/x/tools/go/analysis"
 )
 
 func FuncCanBeConstructor(n *ast.FuncDecl) bool {
@@ -56,25 +57,35 @@ func GetIdent(expr ast.Expr) (*ast.Ident, bool) {
 	}
 }
 
-// GetStartingPos returns the token starting position of the function
-// taking into account if there are comments.
-func GetStartingPos(function *ast.FuncDecl) token.Pos {
-	startingPos := function.Pos()
-	if function.Doc != nil {
-		startingPos = function.Doc.Pos()
+func GetStartingPos(node ast.Node) token.Pos {
+	fn, ok := node.(*ast.FuncDecl)
+	if !ok {
+		return node.Pos()
 	}
 
-	return startingPos
+	if fn.Doc != nil {
+		return fn.Doc.Pos()
+	}
+
+	return fn.Pos()
 }
 
 // NodeToBytes convert the ast.Node in bytes.
-func NodeToBytes(fset *token.FileSet, node ast.Node) ([]byte, error) {
-	var buf bytes.Buffer
-	if err := format.Node(&buf, fset, node); err != nil {
+func NodeToBytes(pass *analysis.Pass, node ast.Node) ([]byte, error) {
+	start := pass.Fset.Position(GetStartingPos(node))
+
+	src, err := pass.ReadFile(start.Filename)
+	if err != nil {
 		return nil, err
 	}
 
-	return buf.Bytes(), nil
+	end := pass.Fset.Position(node.End())
+
+	if start.Offset > len(src) || end.Offset > len(src) {
+		return nil, errors.New("index out of bounds")
+	}
+
+	return src[start.Offset:end.Offset], nil
 }
 
 // SplitExportedUnexported split functions/methods based on whether they are exported or not.

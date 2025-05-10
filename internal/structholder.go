@@ -3,8 +3,8 @@ package internal
 import (
 	"cmp"
 	"go/ast"
-	"go/token"
 	"slices"
+	"strings"
 
 	"golang.org/x/tools/go/analysis"
 )
@@ -16,8 +16,6 @@ type (
 
 // StructHolder contains all the information around a Go struct.
 type StructHolder struct {
-	// The fileset
-	Fset *token.FileSet
 	// The features to be analyzed
 	Features Feature
 
@@ -40,27 +38,39 @@ func (sh *StructHolder) AddMethod(fn *ast.FuncDecl) {
 }
 
 // Analyze applies the linter to the struct holder.
-func (sh *StructHolder) Analyze() []analysis.Diagnostic {
+func (sh *StructHolder) Analyze(pass *analysis.Pass) error {
 	// TODO maybe sort constructors and then report also, like NewXXX before MustXXX
 	slices.SortFunc(sh.StructMethods, func(a, b *ast.FuncDecl) int {
 		return cmp.Compare(a.Pos(), b.Pos())
 	})
 
-	var reports []analysis.Diagnostic
-
 	if sh.Features.IsEnabled(ConstructorCheck) {
-		reports = append(reports, sh.analyzeConstructor()...)
+		newReports, err := sh.analyzeConstructor(pass)
+		if err != nil {
+			return err
+		}
+
+		for _, report := range newReports {
+			pass.Report(report)
+		}
 	}
 
 	if sh.Features.IsEnabled(StructMethodCheck) {
-		reports = append(reports, sh.analyzeStructMethod()...)
+		newReports, err := sh.analyzeStructMethod(pass)
+		if err != nil {
+			return err
+		}
+
+		for _, report := range newReports {
+			pass.Report(report)
+		}
 	}
 
 	// TODO also check that the methods are declared after the struct
-	return reports
+	return nil
 }
 
-func (sh *StructHolder) analyzeConstructor() []analysis.Diagnostic {
+func (sh *StructHolder) analyzeConstructor(pass *analysis.Pass) ([]analysis.Diagnostic, error) {
 	var reports []analysis.Diagnostic
 
 	for i, constructor := range sh.Constructors {
@@ -78,12 +88,22 @@ func (sh *StructHolder) analyzeConstructor() []analysis.Diagnostic {
 				NewAdjacentConstructorsNotSortedAlphabetically(sh.Struct, sh.Constructors[i], sh.Constructors[i+1]),
 			)
 		}
+
+		// propose fix
+		if len(reports) > 0 {
+			suggestedFixes, err := sh.suggestConstructorFix(pass)
+			if err != nil {
+				return nil, err
+			}
+
+			reports[0].SuggestedFixes = suggestedFixes
+		}
 	}
 
-	return reports
+	return reports, nil
 }
 
-func (sh *StructHolder) analyzeStructMethod() []analysis.Diagnostic {
+func (sh *StructHolder) analyzeStructMethod(pass *analysis.Pass) ([]analysis.Diagnostic, error) {
 	var lastExportedMethod *ast.FuncDecl
 
 	for _, m := range sh.StructMethods {
@@ -115,15 +135,119 @@ func (sh *StructHolder) analyzeStructMethod() []analysis.Diagnostic {
 	if sh.Features.IsEnabled(AlphabeticalCheck) {
 		exported, unexported := SplitExportedUnexported(sh.StructMethods)
 		reports = slices.Concat(reports,
-			sortDiagnostics(sh.Struct, exported),
-			sortDiagnostics(sh.Struct, unexported),
+			createSortDiagnostics(sh.Struct, exported),
+			createSortDiagnostics(sh.Struct, unexported),
 		)
 	}
 
-	return reports
+	if len(reports) > 0 {
+		suggestedFixes, err := sh.suggestMethodFix(pass)
+		if err != nil {
+			return nil, err
+		}
+
+		reports[0].SuggestedFixes = suggestedFixes
+	}
+
+	return reports, nil
 }
 
-func sortDiagnostics(typeSpec *ast.TypeSpec, funcDecls []*ast.FuncDecl) []analysis.Diagnostic {
+func (sh *StructHolder) suggestConstructorFix(pass *analysis.Pass) ([]analysis.SuggestedFix, error) {
+	removingConstructorsTextEdit := make([]analysis.TextEdit, len(sh.Constructors))
+	addingConstructorsTextEdit := make([]analysis.TextEdit, len(sh.Constructors))
+
+	constructors := slices.Clone(sh.Constructors)
+
+	if sh.Features.IsEnabled(AlphabeticalCheck) {
+		slices.SortFunc(constructors, alphabeticalSort)
+	}
+
+	for i, constructor := range constructors {
+		removingConstructorsTextEdit[i] = analysis.TextEdit{
+			Pos:     GetStartingPos(constructor),
+			End:     constructor.End(),
+			NewText: make([]byte, 0),
+		}
+
+		constructorBytes, err := NodeToBytes(pass, constructor)
+		if err != nil {
+			return nil, err
+		}
+
+		addingConstructorsTextEdit[i] = analysis.TextEdit{
+			Pos:     sh.Struct.End(),
+			NewText: slices.Concat([]byte("\n\n"), constructorBytes),
+		}
+	}
+
+	suggestedFixes := []analysis.SuggestedFix{
+		{
+			Message:   "Removing current constructors and adding them after struct declaration",
+			TextEdits: slices.Concat(removingConstructorsTextEdit, addingConstructorsTextEdit),
+		},
+	}
+
+	return suggestedFixes, nil
+}
+
+func (sh *StructHolder) suggestMethodFix(pass *analysis.Pass) ([]analysis.SuggestedFix, error) {
+	exported, unexported := SplitExportedUnexported(sh.StructMethods)
+
+	if sh.Features.IsEnabled(AlphabeticalCheck) {
+		slices.SortFunc(exported, alphabeticalSort)
+		slices.SortFunc(unexported, alphabeticalSort)
+	}
+
+	removingMethodsTextEdit := make([]analysis.TextEdit, len(sh.StructMethods))
+	addingMethodsTextEdit := make([]analysis.TextEdit, len(sh.StructMethods))
+
+	for i, method := range exported {
+		removingMethodsTextEdit[i] = analysis.TextEdit{
+			Pos:     GetStartingPos(method),
+			End:     method.End(),
+			NewText: make([]byte, 0),
+		}
+
+		methodBytes, err := NodeToBytes(pass, method)
+		if err != nil {
+			return nil, err
+		}
+
+		addingMethodsTextEdit[i] = analysis.TextEdit{
+			Pos:     GetStartingPos(sh.StructMethods[0]),
+			NewText: slices.Concat(methodBytes, []byte("\n\n")),
+		}
+	}
+
+	for i, method := range unexported {
+		removingMethodsTextEdit[i+len(exported)] = analysis.TextEdit{
+			Pos:     GetStartingPos(method),
+			End:     method.End(),
+			NewText: make([]byte, 0),
+		}
+
+		methodBytes, err := NodeToBytes(pass, method)
+		if err != nil {
+			return nil, err
+		}
+
+		addingMethodsTextEdit[i+len(exported)] = analysis.TextEdit{
+			Pos:     GetStartingPos(sh.StructMethods[0]),
+			NewText: slices.Concat(methodBytes, []byte("\n\n")),
+		}
+	}
+
+	suggestedFixes := []analysis.SuggestedFix{
+		{
+			Message:   "Removing current methods and adding them sorted",
+			TextEdits: slices.Concat(removingMethodsTextEdit, addingMethodsTextEdit),
+		},
+	}
+
+	return suggestedFixes, nil
+}
+
+func createSortDiagnostics(typeSpec *ast.TypeSpec, funcDecls []*ast.FuncDecl) []analysis.Diagnostic {
 	var reports []analysis.Diagnostic
 
 	for i := range funcDecls {
@@ -138,4 +262,8 @@ func sortDiagnostics(typeSpec *ast.TypeSpec, funcDecls []*ast.FuncDecl) []analys
 	}
 
 	return reports
+}
+
+func alphabeticalSort(a, b *ast.FuncDecl) int {
+	return strings.Compare(a.Name.Name, b.Name.Name)
 }
