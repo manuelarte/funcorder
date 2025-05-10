@@ -156,7 +156,13 @@ func (sh *StructHolder) suggestConstructorFix(pass *analysis.Pass) ([]analysis.S
 	removingConstructorsTextEdit := make([]analysis.TextEdit, len(sh.Constructors))
 	addingConstructorsTextEdit := make([]analysis.TextEdit, len(sh.Constructors))
 
-	for i, constructor := range sh.sortedConstructors() {
+	constructors := slices.Clone(sh.Constructors)
+
+	if sh.Features.IsEnabled(AlphabeticalCheck) {
+		slices.SortFunc(constructors, alphabeticalSort)
+	}
+
+	for i, constructor := range constructors {
 		removingConstructorsTextEdit[i] = analysis.TextEdit{
 			Pos:     GetStartingPos(constructor),
 			End:     constructor.End(),
@@ -182,16 +188,6 @@ func (sh *StructHolder) suggestConstructorFix(pass *analysis.Pass) ([]analysis.S
 	}
 
 	return suggestedFixes, nil
-}
-
-func (sh *StructHolder) sortedConstructors() []*ast.FuncDecl {
-	constructors := slices.Clone(sh.Constructors)
-
-	if sh.Features.IsEnabled(AlphabeticalCheck) {
-		slices.SortFunc(constructors, alphabeticalSort)
-	}
-
-	return constructors
 }
 
 func (sh *StructHolder) suggestMethodFix(pass *analysis.Pass) ([]analysis.SuggestedFix, error) {

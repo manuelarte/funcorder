@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"errors"
 	"go/ast"
 	"go/token"
 	"strings"
@@ -78,14 +79,13 @@ func NodeToBytes(pass *analysis.Pass, node ast.Node) ([]byte, error) {
 		return nil, err
 	}
 
-	startOffset := start.Offset
-	endOffset := pass.Fset.Position(node.End()).Offset
+	end := pass.Fset.Position(node.End())
 
-	if startOffset > len(src) || endOffset > len(src) {
-		return nil, ErrIndexOutOfBounds
+	if start.Offset > len(src) || end.Offset > len(src) {
+		return nil, errors.New("index out of bounds")
 	}
 
-	return src[start.Offset:endOffset], nil
+	return src[start.Offset:end.Offset], nil
 }
 
 // SplitExportedUnexported split functions/methods based on whether they are exported or not.
