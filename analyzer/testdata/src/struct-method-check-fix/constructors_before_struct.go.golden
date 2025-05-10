@@ -1,4 +1,4 @@
-package struct_method_alphabetical_fix
+package struct_method_check_fix
 
 func NewOtherMyStruct() (m *MyStruct) {
 	m = &MyStruct{Name: "John"}
@@ -25,6 +25,6 @@ func (m *MyStruct) SetName(name string) {
 	m.Name = name
 }
 
-func (m MyStruct) lenName() int {
+func (m MyStruct) lenName() int { // want `unexported method \"lenName\" for struct \"MyStruct\" should be placed after the exported method \"SetName\"`
 	return len(m.Name)
 }

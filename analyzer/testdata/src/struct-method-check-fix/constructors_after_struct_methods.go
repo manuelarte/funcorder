@@ -1,4 +1,4 @@
-package struct_method_alphabetical_fix
+package struct_method_check_fix
 
 type MyStruct2 struct {
 	Name string

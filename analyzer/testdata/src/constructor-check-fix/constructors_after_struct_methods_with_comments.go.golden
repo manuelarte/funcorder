@@ -7,12 +7,12 @@ type ConstructorAfterStructMethodsWithComments struct {
 // NewOtherConstructorAfterStructMethodsWithComments This constructor creates the
 // struct ConstructorAfterStructMethodsWithComments
 // with a named return
-func NewOtherConstructorAfterStructMethodsWithComments() (m *ConstructorAfterStructMethodsWithComments) {
+func NewOtherConstructorAfterStructMethodsWithComments() (m *ConstructorAfterStructMethodsWithComments) { // want `constructor \"NewOtherConstructorAfterStructMethodsWithComments\" for struct \"ConstructorAfterStructMethodsWithComments\" should be placed before struct method \"GetName\"`
 	m = &ConstructorAfterStructMethodsWithComments{Name: "John"}
 	return
 }
 
-func NewConstructorAfterStructMethodsWithComments() *ConstructorAfterStructMethodsWithComments {
+func NewConstructorAfterStructMethodsWithComments() *ConstructorAfterStructMethodsWithComments { // want `constructor \"NewConstructorAfterStructMethodsWithComments\" for struct \"ConstructorAfterStructMethodsWithComments\" should be placed before struct method \"GetName\"`
 	return &ConstructorAfterStructMethodsWithComments{Name: "John"}
 }
 

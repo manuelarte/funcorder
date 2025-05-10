@@ -100,7 +100,7 @@ func TestAnalyzerWithFix(t *testing.T) {
 		},
 		{
 			desc:     "struct method fix",
-			patterns: "struct-method-fix",
+			patterns: "struct-method-check-fix",
 			options: map[string]string{
 				ConstructorCheckName:  "false",
 				StructMethodCheckName: "true",
@@ -109,7 +109,7 @@ func TestAnalyzerWithFix(t *testing.T) {
 		},
 		{
 			desc:     "struct method alphabetical fix",
-			patterns: "struct-method-alphabetical-fix",
+			patterns: "struct-method-check-alphabetical-fix",
 			options: map[string]string{
 				ConstructorCheckName:  "false",
 				StructMethodCheckName: "true",

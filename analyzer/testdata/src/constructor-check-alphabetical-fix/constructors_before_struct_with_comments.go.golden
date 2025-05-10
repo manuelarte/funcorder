@@ -4,14 +4,14 @@ type ConstructorBeforeStructWithComments struct {
 	Name string
 }
 
-func NewConstructorBeforeStructWithComments() *ConstructorBeforeStructWithComments {
+func NewConstructorBeforeStructWithComments() *ConstructorBeforeStructWithComments { // want `constructor \"NewConstructorBeforeStructWithComments\" for struct \"ConstructorBeforeStructWithComments\" should be placed after the struct declaration` `constructor \"NewConstructorBeforeStructWithComments\" for struct \"ConstructorBeforeStructWithComments\" should be placed before constructor \"NewOtherConstructorBeforeStructWithComments\"`
 	return &ConstructorBeforeStructWithComments{Name: "John"}
 }
 
 // NewOtherConstructorAfterStructMethodsWithComments This constructor creates the
 // struct ConstructorBeforeStructWithComments
 // with a named return
-func NewOtherConstructorBeforeStructWithComments() (m *ConstructorBeforeStructWithComments) {
+func NewOtherConstructorBeforeStructWithComments() (m *ConstructorBeforeStructWithComments) { // want `constructor \"NewOtherConstructorBeforeStructWithComments\" for struct \"ConstructorBeforeStructWithComments\" should be placed after the struct declaration`
 	m = &ConstructorBeforeStructWithComments{Name: "John"}
 	return
 }

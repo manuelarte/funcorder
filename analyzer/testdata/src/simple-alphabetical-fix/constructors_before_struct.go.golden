@@ -4,15 +4,15 @@ type MyStruct struct {
 	Name string
 }
 
-func MustMyStruct() *MyStruct {
+func MustMyStruct() *MyStruct { // want `constructor \"MustMyStruct\" for struct \"MyStruct\" should be placed after the struct declaration` `constructor \"MustMyStruct\" for struct \"MyStruct\" should be placed before constructor \"NewMyStruct\"`
 	return NewMyStruct()
 }
 
-func NewMyStruct() *MyStruct {
+func NewMyStruct() *MyStruct { // want "should be placed after the struct declaration" `constructor \"NewMyStruct\" for struct \"MyStruct\" should be placed before constructor \"NewOtherMyStruct\"`
 	return &MyStruct{Name: "John"}
 }
 
-func NewOtherMyStruct() (m *MyStruct) {
+func NewOtherMyStruct() (m *MyStruct) { // want "should be placed after the struct declaration"
 	m = &MyStruct{Name: "John"}
 	return
 }
@@ -25,6 +25,6 @@ func (m *MyStruct) SetName(name string) {
 	m.Name = name
 }
 
-func (m MyStruct) lenName() int {
+func (m MyStruct) lenName() int { // want `unexported method \"lenName\" for struct \"MyStruct\" should be placed after the exported method \"SetName\"`
 	return len(m.Name)
 }

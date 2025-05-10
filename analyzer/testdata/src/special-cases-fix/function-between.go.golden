@@ -13,7 +13,7 @@ func (f *FunctionBetweenStruct) Close() {
 }
 
 // isOpen comment
-func (f *FunctionBetweenStruct) isOpen() bool {
+func (f *FunctionBetweenStruct) isOpen() bool { // want `unexported method "isOpen" for struct "FunctionBetweenStruct" should be placed after the exported method "Close"`
 	return true
 }
 
