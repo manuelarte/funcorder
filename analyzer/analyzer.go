@@ -74,10 +74,7 @@ func (f *funcorder) run(pass *analysis.Pass) (any, error) {
 	insp.Preorder(nodeFilter, func(n ast.Node) {
 		switch node := n.(type) {
 		case *ast.File:
-			for _, report := range fp.Analyze() {
-				pass.Report(report)
-			}
-
+			fp.Analyze(pass)
 			fp.ResetStructs()
 
 		case *ast.FuncDecl:
@@ -88,9 +85,7 @@ func (f *funcorder) run(pass *analysis.Pass) (any, error) {
 		}
 	})
 
-	for _, report := range fp.Analyze() {
-		pass.Report(report)
-	}
+	fp.Analyze(pass)
 
 	//nolint:nilnil //any, error
 	return nil, nil
