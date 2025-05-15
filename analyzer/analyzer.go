@@ -44,6 +44,12 @@ type funcorder struct {
 }
 
 func (f *funcorder) run(pass *analysis.Pass) (any, error) {
+	insp, found := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
+	if !found {
+		//nolint:nilnil // impossible case.
+		return nil, nil
+	}
+
 	var enabledCheckers internal.Feature
 	if f.constructorCheck {
 		enabledCheckers.Enable(internal.ConstructorCheck)
@@ -57,13 +63,7 @@ func (f *funcorder) run(pass *analysis.Pass) (any, error) {
 		enabledCheckers.Enable(internal.AlphabeticalCheck)
 	}
 
-	fp := internal.NewFileProcessor(pass.Fset, enabledCheckers)
-
-	insp, found := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
-	if !found {
-		//nolint:nilnil // impossible case.
-		return nil, nil
-	}
+	fp := internal.NewFileProcessor(enabledCheckers)
 
 	nodeFilter := []ast.Node{
 		(*ast.File)(nil),
@@ -78,13 +78,13 @@ func (f *funcorder) run(pass *analysis.Pass) (any, error) {
 				pass.Report(report)
 			}
 
-			fp.NewFileNode(node)
+			fp.ResetStructs()
 
 		case *ast.FuncDecl:
-			fp.NewFuncDecl(node)
+			fp.AddFuncDecl(node)
 
 		case *ast.TypeSpec:
-			fp.NewTypeSpec(node)
+			fp.AddTypeSpec(node)
 		}
 	})
 

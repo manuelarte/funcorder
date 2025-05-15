@@ -2,22 +2,19 @@ package internal
 
 import (
 	"go/ast"
-	"go/token"
 
 	"golang.org/x/tools/go/analysis"
 )
 
 // FileProcessor Holder to store all the functions that are potential to be constructors and all the structs.
 type FileProcessor struct {
-	fset     *token.FileSet
 	structs  map[string]*StructHolder
 	features Feature
 }
 
 // NewFileProcessor creates a new file processor.
-func NewFileProcessor(fset *token.FileSet, checkers Feature) *FileProcessor {
+func NewFileProcessor(checkers Feature) *FileProcessor {
 	return &FileProcessor{
-		fset:     fset,
 		structs:  make(map[string]*StructHolder),
 		features: checkers,
 	}
@@ -37,34 +34,27 @@ func (fp *FileProcessor) Analyze() []analysis.Diagnostic {
 	return reports
 }
 
-func (fp *FileProcessor) NewFileNode(_ *ast.File) {
+func (fp *FileProcessor) ResetStructs() {
 	fp.structs = make(map[string]*StructHolder)
 }
 
-func (fp *FileProcessor) NewFuncDecl(n *ast.FuncDecl) {
-	if sc, ok := NewStructConstructor(n); ok {
-		fp.addConstructor(sc)
+func (fp *FileProcessor) AddFuncDecl(n *ast.FuncDecl) {
+	if sc := NewStructConstructor(n); sc != nil {
+		sh := fp.getOrCreate(sc.StructReturn.Name)
+		sh.Constructors = append(sh.Constructors, sc.Constructor)
+
 		return
 	}
 
-	if st, ok := FuncIsMethod(n); ok {
-		fp.addMethod(st.Name, n)
+	if st := funcIsMethod(n); st != nil {
+		sh := fp.getOrCreate(st.Name)
+		sh.StructMethods = append(sh.StructMethods, n)
 	}
 }
 
-func (fp *FileProcessor) NewTypeSpec(n *ast.TypeSpec) {
+func (fp *FileProcessor) AddTypeSpec(n *ast.TypeSpec) {
 	sh := fp.getOrCreate(n.Name.Name)
 	sh.Struct = n
-}
-
-func (fp *FileProcessor) addConstructor(sc StructConstructor) {
-	sh := fp.getOrCreate(sc.GetStructReturn().Name)
-	sh.AddConstructor(sc.GetConstructor())
-}
-
-func (fp *FileProcessor) addMethod(st string, n *ast.FuncDecl) {
-	sh := fp.getOrCreate(st)
-	sh.AddMethod(n)
 }
 
 func (fp *FileProcessor) getOrCreate(structName string) *StructHolder {
@@ -73,10 +63,34 @@ func (fp *FileProcessor) getOrCreate(structName string) *StructHolder {
 	}
 
 	created := &StructHolder{
-		Fset:     fp.fset,
 		Features: fp.features,
 	}
 	fp.structs[structName] = created
 
 	return created
+}
+
+func funcIsMethod(n *ast.FuncDecl) *ast.Ident {
+	if n.Recv == nil {
+		return nil
+	}
+
+	if len(n.Recv.List) != 1 {
+		return nil
+	}
+
+	return getIdent(n.Recv.List[0].Type)
+}
+
+func getIdent(expr ast.Expr) *ast.Ident {
+	switch exp := expr.(type) {
+	case *ast.StarExpr:
+		return getIdent(exp.X)
+
+	case *ast.Ident:
+		return exp
+
+	default:
+		return nil
+	}
 }
