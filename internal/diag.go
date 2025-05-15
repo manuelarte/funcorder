@@ -18,8 +18,7 @@ func NewConstructorNotAfterStructType(structSpec *ast.TypeSpec, constructor *ast
 
 func NewConstructorNotBeforeStructMethod(
 	structSpec *ast.TypeSpec,
-	constructor *ast.FuncDecl,
-	method *ast.FuncDecl,
+	constructor, method *ast.FuncDecl,
 ) analysis.Diagnostic {
 	return analysis.Diagnostic{
 		Pos: constructor.Pos(),
@@ -31,8 +30,7 @@ func NewConstructorNotBeforeStructMethod(
 
 func NewAdjacentConstructorsNotSortedAlphabetically(
 	structSpec *ast.TypeSpec,
-	constructorNotSorted *ast.FuncDecl,
-	otherConstructorNotSorted *ast.FuncDecl,
+	constructorNotSorted, otherConstructorNotSorted *ast.FuncDecl,
 ) analysis.Diagnostic {
 	return analysis.Diagnostic{
 		Pos: otherConstructorNotSorted.Pos(),
@@ -44,8 +42,7 @@ func NewAdjacentConstructorsNotSortedAlphabetically(
 
 func NewUnexportedMethodBeforeExportedForStruct(
 	structSpec *ast.TypeSpec,
-	privateMethod *ast.FuncDecl,
-	publicMethod *ast.FuncDecl,
+	privateMethod, publicMethod *ast.FuncDecl,
 ) analysis.Diagnostic {
 	return analysis.Diagnostic{
 		Pos: privateMethod.Pos(),
@@ -57,8 +54,7 @@ func NewUnexportedMethodBeforeExportedForStruct(
 
 func NewAdjacentStructMethodsNotSortedAlphabetically(
 	structSpec *ast.TypeSpec,
-	method *ast.FuncDecl,
-	otherMethod *ast.FuncDecl,
+	method, otherMethod *ast.FuncDecl,
 ) analysis.Diagnostic {
 	return analysis.Diagnostic{
 		Pos: otherMethod.Pos(),

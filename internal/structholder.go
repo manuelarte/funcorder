@@ -3,21 +3,13 @@ package internal
 import (
 	"cmp"
 	"go/ast"
-	"go/token"
 	"slices"
 
 	"golang.org/x/tools/go/analysis"
 )
 
-type (
-	ExportedMethods   []*ast.FuncDecl
-	UnexportedMethods []*ast.FuncDecl
-)
-
 // StructHolder contains all the information around a Go struct.
 type StructHolder struct {
-	// The fileset
-	Fset *token.FileSet
 	// The features to be analyzed
 	Features Feature
 
@@ -29,14 +21,6 @@ type StructHolder struct {
 
 	// Struct methods
 	StructMethods []*ast.FuncDecl
-}
-
-func (sh *StructHolder) AddConstructor(fn *ast.FuncDecl) {
-	sh.Constructors = append(sh.Constructors, fn)
-}
-
-func (sh *StructHolder) AddMethod(fn *ast.FuncDecl) {
-	sh.StructMethods = append(sh.StructMethods, fn)
 }
 
 // Analyze applies the linter to the struct holder.
@@ -113,7 +97,7 @@ func (sh *StructHolder) analyzeStructMethod() []analysis.Diagnostic {
 	}
 
 	if sh.Features.IsEnabled(AlphabeticalCheck) {
-		exported, unexported := SplitExportedUnexported(sh.StructMethods)
+		exported, unexported := splitExportedUnexported(sh.StructMethods)
 		reports = slices.Concat(reports,
 			sortDiagnostics(sh.Struct, exported),
 			sortDiagnostics(sh.Struct, unexported),
@@ -138,4 +122,19 @@ func sortDiagnostics(typeSpec *ast.TypeSpec, funcDecls []*ast.FuncDecl) []analys
 	}
 
 	return reports
+}
+
+// splitExportedUnexported split functions/methods based on whether they are exported or not.
+//
+//nolint:nonamedreturns // names serve as documentation
+func splitExportedUnexported(funcDecls []*ast.FuncDecl) (exported, unexported []*ast.FuncDecl) {
+	for _, f := range funcDecls {
+		if f.Name.IsExported() {
+			exported = append(exported, f)
+		} else {
+			unexported = append(unexported, f)
+		}
+	}
+
+	return exported, unexported
 }
