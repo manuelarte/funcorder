@@ -10,3 +10,23 @@ updates:
     directory: "/"              # Location of package manifests
     schedule:
       interval: "weekly"
+    groups:
+      all-deps:
+        applies-to: version-updates
+        patterns:
+          - "*"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    groups:
+      all-deps:
+        applies-to: version-updates
+        patterns:
+          - "*"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
