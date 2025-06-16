@@ -57,6 +57,15 @@ func TestAnalyzer(t *testing.T) {
 				AlphabeticalCheckName: "true",
 			},
 		},
+		{
+			desc:     "multiple types defined",
+			patterns: "multiple-types",
+			options: map[string]string{
+				ConstructorCheckName:  "true",
+				StructMethodCheckName: "true",
+				AlphabeticalCheckName: "false",
+			},
+		},
 	}
 
 	for _, test := range testCases {
