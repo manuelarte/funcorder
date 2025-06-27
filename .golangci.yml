@@ -10,8 +10,8 @@ formatters:
     gofmt:
       simplify: true
       rewrite-rules:
-        - pattern: 'interface{}'
-          replacement: 'any'
+        - pattern: "interface{}"
+          replacement: "any"
     gofumpt:
       extra-rules: true
     gci:
@@ -23,35 +23,32 @@ formatters:
 linters:
   default: all
   disable:
-      - decorder
-      - dupl
-      - err113
-      - errchkjson
-      - exhaustruct
-      - forcetypeassert
-      - ginkgolinter # Related to Ginkgo.
-      - goheader
-      - gomodguard
-      - gosmopolitan
-      - grouper
-      - importas
-      - inamedparam
-      - ireturn
-      - maintidx
-      - nlreturn
-      - paralleltest
-      - prealloc
-      - promlinter # Related to prometheus.
-      - protogetter # Related to protocol buffer.
-      - rowserrcheck # Related to SQL.
-      - spancheck # Related to OpenTelemetry
-      - sqlclosecheck # Related to SQL.
-      - tagliatelle
-      - testpackage
-      - thelper
-      - varnamelen
-      - wrapcheck
-      - zerologlint
+    - decorder
+    - dupl  # Too many false positives.
+    - err113  # This leads to lots of unnecessary allocations and boilerplate.
+    - errchkjson  # no json.
+    - exhaustruct  # if applicable, to be checked in code reviews.
+    - forcetypeassert  # used in a different linter
+    - ginkgolinter # Related to Ginkgo.
+    - goheader  # no need of copyright headers.
+    - gomodguard  # not needed for a linter
+    - gosmopolitan  # no i18n.
+    - grouper  # no need of checking expression groups.
+    - importas  # no need of aliasing imports.
+    - inamedparam  # not important.
+    - ireturn  # no need for this linter here.
+    - paralleltest  # we can't test in parallel.
+    - promlinter # Related to prometheus.
+    - protogetter # Related to protocol buffer.
+    - rowserrcheck # Related to SQL.
+    - spancheck # Related to OpenTelemetry.
+    - sqlclosecheck # Related to SQL.
+    - tagliatelle  # No need for tags.
+    - testpackage  # we are testing using google tools.
+    - thelper  # we are testing using google tools.
+    - varnamelen  # if applicable, to be checked in a code review.
+    - wrapcheck  # too many false positives for return values defined in internal packages.
+    - zerologlint  # not using zerolog.
 
   settings:
     cyclop:
@@ -71,13 +68,13 @@ linters:
               desc: Use github.com/gofrs/uuid/v5 or later, it was not a go module before v5
         non-main files:
           files:
-            - '!**/main.go'
+            - "!**/main.go"
           deny:
             - pkg: log$
               desc: Use log/slog instead, see https://go.dev/blog/slog
         non-test files:
           files:
-            - '!$test'
+            - "!$test"
           deny:
             - pkg: math/rand$
               desc: Use math/rand/v2 instead, see https://go.dev/blog/randv2
@@ -95,10 +92,10 @@ linters:
       lines: -1
       statements: 50
       ignore-comments: true
-    gocognit:
-      min-complexity: 20
     gochecksumtype:
       default-signifies-exhaustive: false
+    gocognit:
+      min-complexity: 20
     gocritic:
       settings:
         captLocal:
@@ -141,6 +138,12 @@ linters:
     reassign:
       patterns:
         - .*
+    revive:
+      rules:
+        - name: filename-format
+          arguments:
+            - ^[a-z][_a-z0-9]*.go$
+        - name: var-naming # badPackageNames not working
     sloglint:
       no-global: all
       context: scope
@@ -165,4 +168,3 @@ linters:
 issues:
   max-same-issues: 0
   max-issues-per-linter: 0
-
