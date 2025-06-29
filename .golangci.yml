@@ -48,6 +48,7 @@ linters:
     - thelper  # We are testing using google tools.
     - varnamelen  # If applicable, to be checked in a code review.
     - wrapcheck  # Too many false positives for return values defined in internal packages.
+    - wsl  # Deprecated, using wsl_v5
     - zerologlint  # Not using zerolog.
 
   settings:
