@@ -23,32 +23,32 @@ formatters:
 linters:
   default: all
   disable:
-    - decorder
+    - decorder  # If applicable, to be checked in code reviews.
     - dupl  # Too many false positives.
     - err113  # This leads to lots of unnecessary allocations and boilerplate.
-    - errchkjson  # no json.
-    - exhaustruct  # if applicable, to be checked in code reviews.
-    - forcetypeassert  # used in a different linter
+    - errchkjson  # No json.
+    - exhaustruct  # If applicable, to be checked in code reviews.
+    - forcetypeassert  # Used in a different linter
     - ginkgolinter # Related to Ginkgo.
-    - goheader  # no need of copyright headers.
-    - gomodguard  # not needed for a linter
-    - gosmopolitan  # no i18n.
-    - grouper  # no need of checking expression groups.
-    - importas  # no need of aliasing imports.
-    - inamedparam  # not important.
-    - ireturn  # no need for this linter here.
-    - paralleltest  # we can't test in parallel.
+    - goheader  # No need of copyright headers.
+    - gomodguard  # Not needed for a linter
+    - gosmopolitan  # No i18n.
+    - grouper  # No need of checking expression groups.
+    - importas  # No need of aliasing imports.
+    - inamedparam  # Not important.
+    - ireturn  # No need for this linter here.
+    - paralleltest  # We can't test in parallel.
     - promlinter # Related to prometheus.
     - protogetter # Related to protocol buffer.
     - rowserrcheck # Related to SQL.
     - spancheck # Related to OpenTelemetry.
     - sqlclosecheck # Related to SQL.
     - tagliatelle  # No need for tags.
-    - testpackage  # we are testing using google tools.
-    - thelper  # we are testing using google tools.
-    - varnamelen  # if applicable, to be checked in a code review.
-    - wrapcheck  # too many false positives for return values defined in internal packages.
-    - zerologlint  # not using zerolog.
+    - testpackage  # We are testing using google tools.
+    - thelper  # We are testing using google tools.
+    - varnamelen  # If applicable, to be checked in a code review.
+    - wrapcheck  # Too many false positives for return values defined in internal packages.
+    - zerologlint  # Not using zerolog.
 
   settings:
     cyclop:
