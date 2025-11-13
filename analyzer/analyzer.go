@@ -46,14 +46,10 @@ type funcorder struct {
 	fix               bool
 }
 
-func (f *funcorder) run(pass *analysis.Pass) (any, error) {
-	insp, found := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
-	if !found {
-		//nolint:nilnil // impossible case.
-		return nil, nil
-	}
-
+// buildEnabledCheckers builds the enabled checkers feature set.
+func (f *funcorder) buildEnabledCheckers() internal.Feature {
 	var enabledCheckers internal.Feature
+
 	if f.constructorCheck {
 		enabledCheckers.Enable(internal.ConstructorCheck)
 	}
@@ -66,6 +62,17 @@ func (f *funcorder) run(pass *analysis.Pass) (any, error) {
 		enabledCheckers.Enable(internal.AlphabeticalCheck)
 	}
 
+	return enabledCheckers
+}
+
+func (f *funcorder) run(pass *analysis.Pass) (any, error) {
+	insp, found := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
+	if !found {
+		//nolint:nilnil // impossible case.
+		return nil, nil
+	}
+
+	enabledCheckers := f.buildEnabledCheckers()
 	fp := internal.NewFileProcessor(enabledCheckers)
 
 	nodeFilter := []ast.Node{
@@ -74,60 +81,101 @@ func (f *funcorder) run(pass *analysis.Pass) (any, error) {
 		(*ast.TypeSpec)(nil),
 	}
 
-	// Collect all files for fixing
 	var filesToFix []*ast.File
 
+	var currentFile *ast.File
+
 	insp.Preorder(nodeFilter, func(n ast.Node) {
-		switch node := n.(type) {
-		case *ast.File:
-			// Collect file for later fixing
-			if f.fix {
-				filesToFix = append(filesToFix, node)
-			}
-			// Analyze the previous file's data (if not fixing)
-			// Note: Preorder visits File before its children, so when we hit a new File,
-			// we've already processed all children of the previous File
-			if !f.fix {
-				fp.Analyze(pass)
-			}
-			fp.ResetStructs()
-
-		case *ast.FuncDecl:
-			fp.AddFuncDecl(node)
-
-		case *ast.TypeSpec:
-			fp.AddTypeSpec(node)
-		}
+		filesToFix, currentFile = f.handleNode(n, pass, fp, f.fix, filesToFix, currentFile, enabledCheckers)
 	})
 
 	// Analyze the last file (if not in fix mode)
-	// This is needed because we only analyze when encountering the next file
-	if !f.fix {
+	if !f.fix && currentFile != nil {
 		fp.Analyze(pass)
 	}
 
 	// Fix files after all declarations have been collected
 	if f.fix {
-		for _, file := range filesToFix {
-			// Reset and recollect for this file
+		// Check the last file if we're in fix mode
+		if currentFile != nil {
+			// Recollect declarations for the last file to check if it needs fixing
 			fp.ResetStructs()
-			// Re-collect declarations for this file
-			for _, decl := range file.Decls {
-				switch d := decl.(type) {
-				case *ast.FuncDecl:
-					fp.AddFuncDecl(d)
-				case *ast.GenDecl:
-					for _, spec := range d.Specs {
-						if typeSpec, ok := spec.(*ast.TypeSpec); ok {
-							fp.AddTypeSpec(typeSpec)
-						}
-					}
-				}
+			f.recollectDeclarations(currentFile, fp)
+
+			if internal.NeedsFixing(currentFile, fp, enabledCheckers) {
+				filesToFix = append(filesToFix, currentFile)
 			}
-			internal.FixFile(pass, file, fp, enabledCheckers)
 		}
+
+		f.fixFiles(pass, filesToFix, fp, enabledCheckers)
 	}
 
 	//nolint:nilnil //any, error
 	return nil, nil
+}
+
+// handleNode processes a single AST node.
+func (f *funcorder) handleNode(
+	n ast.Node,
+	pass *analysis.Pass,
+	fp *internal.FileProcessor,
+	fixMode bool,
+	filesToFix []*ast.File,
+	currentFile *ast.File,
+	enabledCheckers internal.Feature,
+) ([]*ast.File, *ast.File) {
+	switch node := n.(type) {
+	case *ast.File:
+		// Analyze previous file before moving to next one
+		if currentFile != nil {
+			if !fixMode {
+				fp.Analyze(pass)
+			} else if internal.NeedsFixing(currentFile, fp, enabledCheckers) {
+				// Check if the previous file needs fixing (before resetting)
+				filesToFix = append(filesToFix, currentFile)
+			}
+
+			fp.ResetStructs()
+		}
+
+		currentFile = node
+
+	case *ast.FuncDecl:
+		fp.AddFuncDecl(node)
+
+	case *ast.TypeSpec:
+		fp.AddTypeSpec(node)
+	}
+
+	return filesToFix, currentFile
+}
+
+// fixFiles fixes all collected files.
+func (f *funcorder) fixFiles(
+	pass *analysis.Pass,
+	filesToFix []*ast.File,
+	fp *internal.FileProcessor,
+	enabledCheckers internal.Feature,
+) {
+	for _, file := range filesToFix {
+		fp.ResetStructs()
+		f.recollectDeclarations(file, fp)
+		internal.FixFile(pass, file, fp, enabledCheckers)
+	}
+}
+
+// recollectDeclarations recollects declarations from a file.
+func (f *funcorder) recollectDeclarations(file *ast.File, fp *internal.FileProcessor) {
+	for _, decl := range file.Decls {
+		switch d := decl.(type) {
+		case *ast.FuncDecl:
+			fp.AddFuncDecl(d)
+		case *ast.GenDecl:
+			for _, spec := range d.Specs {
+				if typeSpec, ok := spec.(*ast.TypeSpec); ok {
+					fp.AddTypeSpec(typeSpec)
+				}
+			}
+		}
+	}
 }

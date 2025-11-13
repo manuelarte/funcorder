@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/analysistest"
 )
 
@@ -147,50 +148,112 @@ func (m MyStruct) GetName() string {
 			},
 			description: "Standalone comments with newlines on both sides should be preserved",
 		},
+		{
+			desc: "imports preserved",
+			input: `package fix
+
+import (
+	"fmt"
+	"time"
+)
+
+func NewMyStruct() *MyStruct {
+	return &MyStruct{Name: fmt.Sprintf("John-%d", time.Now().Unix())}
+}
+
+type MyStruct struct {
+	Name string
+}
+
+func (m MyStruct) GetName() string {
+	return m.Name
+}
+`,
+			expected: `package fix
+
+import (
+	"fmt"
+	"time"
+)
+
+type MyStruct struct {
+	Name string
+}
+
+func NewMyStruct() *MyStruct {
+	return &MyStruct{Name: fmt.Sprintf("John-%d", time.Now().Unix())}
+}
+
+func (m MyStruct) GetName() string {
+	return m.Name
+}
+`,
+			options: map[string]string{
+				"fix": "true",
+			},
+			description: "Imports should be preserved in their correct position after package declaration",
+		},
 	}
 
 	for _, test := range testCasesWithExpected {
 		t.Run(test.desc, func(t *testing.T) {
-			// Create temporary directory
-			tmpDir := t.TempDir()
-			testFile := filepath.Join(tmpDir, "test.go")
-
-			// Write input file
-			if err := os.WriteFile(testFile, []byte(test.input), 0o644); err != nil {
-				t.Fatalf("Failed to write test file: %v", err)
-			}
-
-			// Create analyzer with fix enabled
-			a := NewAnalyzer()
-			for k, v := range test.options {
-				if err := a.Flags.Set(k, v); err != nil {
-					t.Fatalf("Failed to set flag %s=%s: %v", k, v, err)
-				}
-			}
+			testFile := setupTestFile(t, test.input)
+			a := setupAnalyzer(test.options)
 
 			// Use analysistest to run the analyzer which will handle file fixing
-			// We'll check the file contents after
-			analysistest.Run(t, tmpDir, a)
+			analysistest.Run(t, filepath.Dir(testFile), a)
 
-			// Read the fixed file
-			fixedContent, err := os.ReadFile(testFile)
-			if err != nil {
-				t.Fatalf("Failed to read fixed file: %v", err)
-			}
-
-			// Normalize whitespace for comparison
-			got := strings.TrimSpace(string(fixedContent))
-			expected := strings.TrimSpace(test.expected)
-
-			if got != expected {
-				t.Errorf("Fix failed for %s\n\nGot:\n%s\n\nExpected:\n%s\n\nDescription: %s",
-					test.desc, got, expected, test.description)
-			}
-
-			// Verify comments are preserved (only if the input had comments)
-			if strings.Contains(test.input, "Comment") && !strings.Contains(got, "Comment") {
-				t.Errorf("Comments were lost in fix for %s", test.desc)
-			}
+			verifyFixedFile(t, testFile, test.expected, test.desc, test.description, test.input)
 		})
+	}
+}
+
+// setupTestFile creates a temporary test file with the given input.
+func setupTestFile(t *testing.T, input string) string {
+	tmpDir := t.TempDir()
+	testFile := filepath.Join(tmpDir, "test.go")
+
+	err := os.WriteFile(testFile, []byte(input), 0o644)
+	if err != nil {
+		t.Fatalf("Failed to write test file: %v", err)
+	}
+
+	return testFile
+}
+
+// setupAnalyzer creates and configures the analyzer with the given options.
+func setupAnalyzer(options map[string]string) *analysis.Analyzer {
+	a := NewAnalyzer()
+
+	for k, v := range options {
+		err := a.Flags.Set(k, v)
+		if err != nil {
+			// This shouldn't happen in tests, but handle it gracefully
+			panic(err)
+		}
+	}
+
+	return a
+}
+
+// verifyFixedFile verifies that the fixed file matches the expected output.
+func verifyFixedFile(t *testing.T, testFile, expected, desc, description, input string) {
+	fixedContent, err := os.ReadFile(testFile)
+	if err != nil {
+		t.Fatalf("Failed to read fixed file: %v", err)
+	}
+
+	// Normalize whitespace for comparison
+	got := strings.TrimSpace(string(fixedContent))
+	expectedTrimmed := strings.TrimSpace(expected)
+
+	if got != expectedTrimmed {
+		t.Errorf("Fix failed for %s\n\nGot:\n%s\n\nExpected:\n%s\n\nDescription: %s",
+			desc, got, expectedTrimmed, description)
+	}
+
+	// Verify comments are preserved (only if the input had comments)
+	if strings.Contains(input, "Comment") && !strings.Contains(got, "Comment") {
+		t.Errorf("Comments were lost in fix for %s", desc)
 	}
 }
