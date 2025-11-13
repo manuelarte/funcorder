@@ -5,11 +5,12 @@ import (
 	"cmp"
 	"fmt"
 	"go/ast"
-	"go/format"
 	"go/token"
 	"os"
 	"slices"
 
+	"github.com/dave/dst"
+	"github.com/dave/dst/decorator"
 	"golang.org/x/tools/go/analysis"
 )
 
@@ -47,38 +48,62 @@ func FixFile(pass *analysis.Pass, file *ast.File, fp *FileProcessor, features Fe
 		return
 	}
 
-	// Reorder declarations in the AST
-	reorderDeclarations(file, orderedDecls)
-
-	// Write the fixed code back to the file
-	writeFixedFile(pass, file)
+	// Use dst to reorder declarations while preserving comments
+	writeFixedFileWithDst(pass, file, decls, orderedDecls)
 }
 
 // declaration represents a top-level declaration with its associated comments.
 type declaration struct {
-	node     ast.Decl
-	comments []*ast.CommentGroup
-	pos      token.Pos
+	node            ast.Decl
+	docComments     []*ast.CommentGroup // DOC comments (attached via Doc field)
+	standaloneComments []*ast.CommentGroup // Standalone comments (in file.Comments)
+	pos              token.Pos
 }
 
 // collectDeclarations collects all top-level declarations from the file.
 func collectDeclarations(file *ast.File, _ *FileProcessor) []declaration {
 	decls := make([]declaration, 0, len(file.Decls))
 
-	// Find the comment group immediately preceding each declaration
-	// Comments are already associated via Doc field, but we also need standalone comments
+	// Separate DOC comments (attached via Doc field) from standalone comments (in file.Comments)
 	for i, d := range file.Decls {
-		comments := getDocComments(d)
+		// Get DOC comments (attached to nodes via Doc field)
+		docComments := getDocComments(d)
+
+		// Get standalone comments (in file.Comments, not attached to nodes)
 		prevEnd := getPreviousEnd(file, i)
 		nextStart, hasNext := getNextStart(file, i)
-
 		standaloneComments := collectStandaloneComments(file.Comments, d, prevEnd, nextStart, hasNext)
-		comments = append(comments, standaloneComments...)
+
+		// If node.Doc is nil but there are comments immediately before this declaration,
+		// treat them as DOC comments (they should be attached to the node)
+		if len(docComments) == 0 {
+			// Find comments that are immediately before this declaration (DOC comments)
+			for _, cg := range file.Comments {
+				// Skip if this is already a standalone comment
+				isStandalone := false
+				for _, sc := range standaloneComments {
+					if sc == cg {
+						isStandalone = true
+
+						break
+					}
+				}
+				if isStandalone {
+					continue
+				}
+
+				// If comment is between prevEnd and this declaration, it's a DOC comment
+				if cg.Pos() > prevEnd && cg.End() <= d.Pos() {
+					docComments = append(docComments, cg)
+				}
+			}
+		}
 
 		decls = append(decls, declaration{
-			node:     d,
-			comments: comments,
-			pos:      d.Pos(),
+			node:              d,
+			docComments:       docComments,
+			standaloneComments: standaloneComments,
+			pos:               d.Pos(),
 		})
 	}
 
@@ -114,9 +139,9 @@ func getPreviousEnd(file *ast.File, i int) token.Pos {
 		return file.Decls[i-1].End()
 	}
 
-	// Find the end of the package declaration - approximate position
-	// Package declaration ends after "package" keyword + package name
-	return file.Package + token.Pos(packageDeclEstimate)
+	// For the first declaration, return the package position itself
+	// This allows us to capture comments that appear right after the package line
+	return file.Package
 }
 
 // getNextStart gets the start position of the next declaration.
@@ -490,66 +515,27 @@ func needsReordering(original, ordered []declaration) bool {
 	return false
 }
 
-// reorderDeclarations reorders declarations in the AST file.
-func reorderDeclarations(file *ast.File, ordered []declaration) { //nolint:gocognit
-	// Create new declarations list
-	newDecls := make([]ast.Decl, 0, len(ordered))
-
-	// Add declarations in order, ensuring comments are attached as Doc comments
-	// This ensures comments move with their declarations
-	for _, d := range ordered {
-		// Ensure comments are attached as Doc comments
-		// If there's already a Doc comment, keep it; otherwise use the first comment from our collection
-		switch node := d.node.(type) {
-		case *ast.GenDecl:
-			if node.Doc == nil && len(d.comments) > 0 {
-				// Use the first comment (could be standalone or existing Doc)
-				node.Doc = d.comments[0]
-			}
-		case *ast.FuncDecl:
-			if node.Doc == nil && len(d.comments) > 0 {
-				// Use the first comment (could be standalone or existing Doc)
-				node.Doc = d.comments[0]
-			}
-		}
-
-		newDecls = append(newDecls, d.node)
+// removeStandaloneFromStart removes standalone comment strings from Start decorations.
+func removeStandaloneFromStart(startDecs []string, standaloneStrs []string) []string {
+	// Build a set of standalone strings for fast lookup
+	standaloneSet := make(map[string]bool)
+	for _, s := range standaloneStrs {
+		standaloneSet[s] = true
 	}
-
-	file.Decls = newDecls
-
-	// Rebuild comments list - only include comments that are NOT Doc comments
-	// go/format automatically places Doc comments before their declarations
-	// We only need to keep standalone comments that aren't attached to declarations
-	docComments := make(map[*ast.CommentGroup]bool)
-
-	for _, d := range ordered {
-		switch node := d.node.(type) {
-		case *ast.GenDecl:
-			if node.Doc != nil {
-				docComments[node.Doc] = true
-			}
-		case *ast.FuncDecl:
-			if node.Doc != nil {
-				docComments[node.Doc] = true
-			}
+	
+	// Filter out standalone comments from Start decorations
+	var result []string
+	for _, dec := range startDecs {
+		if !standaloneSet[dec] {
+			result = append(result, dec)
 		}
 	}
-
-	// Only keep comments that aren't Doc comments
-	newComments := make([]*ast.CommentGroup, 0)
-
-	for _, cg := range file.Comments {
-		if !docComments[cg] {
-			newComments = append(newComments, cg)
-		}
-	}
-
-	file.Comments = newComments
+	
+	return result
 }
 
-// writeFixedFile writes the fixed AST back to the file.
-func writeFixedFile(pass *analysis.Pass, file *ast.File) {
+// writeFixedFileWithDst writes the fixed file using dst to preserve comments.
+func writeFixedFileWithDst(pass *analysis.Pass, file *ast.File, originalDecls []declaration, orderedDecls []declaration) {
 	// Get the file path
 	fset := pass.Fset
 	filePath := fset.File(file.Pos()).Name()
@@ -558,27 +544,143 @@ func writeFixedFile(pass *analysis.Pass, file *ast.File) {
 		return
 	}
 
-	// Format the file
-	var buf bytes.Buffer
+	// Convert ast.File to dst.File with decorator
+	dec := decorator.NewDecorator(fset)
+	dstFile, err := dec.DecorateFile(file)
+	if err != nil {
+		pass.Report(analysis.Diagnostic{
+			Pos:     file.Pos(),
+			Message: fmt.Sprintf("failed to decorate file: %v", err),
+		})
+		return
+	}
 
-	err := format.Node(&buf, fset, file)
+	// Build a map from ast.Decl to dst.Decl for reordering
+	declMap := make(map[ast.Decl]dst.Decl)
+	for i, astDecl := range file.Decls {
+		if i < len(dstFile.Decls) {
+			declMap[astDecl] = dstFile.Decls[i]
+		}
+	}
+
+	// Identify standalone comments from the original ordered declarations
+	// Standalone comments are those in the standaloneComments field
+	declToStandalone := make(map[ast.Decl][]string)
+	for _, decl := range orderedDecls {
+		if len(decl.standaloneComments) > 0 {
+			// Convert ast comment groups to decoration strings
+			var standaloneStrs []string
+			for _, cg := range decl.standaloneComments {
+				for _, comment := range cg.List {
+					standaloneStrs = append(standaloneStrs, comment.Text)
+				}
+				standaloneStrs = append(standaloneStrs, "\n") // Blank line after standalone comment
+			}
+			declToStandalone[decl.node] = standaloneStrs
+		}
+	}
+
+	// Build a map of original positions from the ORIGINAL (unreordered) declarations
+	originalPosMap := make(map[ast.Decl]int)
+	for origIdx, decl := range originalDecls {
+		originalPosMap[decl.node] = origIdx
+	}
+	
+	// Pre-collect standalone comments from declarations that moved from position 0
+	var firstDeclStandaloneComments []string
+	for newIdx, orderedDecl := range orderedDecls {
+		origIdx := originalPosMap[orderedDecl.node]
+		// If this declaration moved from position 0 to a later position,
+		// its standalone comments should go to the new first declaration
+		if origIdx == 0 && newIdx > 0 {
+			if standaloneStrs, hasStandalone := declToStandalone[orderedDecl.node]; hasStandalone {
+				firstDeclStandaloneComments = append(firstDeclStandaloneComments, standaloneStrs...)
+			}
+		}
+	}
+	
+	// Reorder dst declarations based on our ordered list
+	newDstDecls := make([]dst.Decl, 0, len(orderedDecls))
+	
+	for newIdx, orderedDecl := range orderedDecls {
+		if dstDecl, ok := declMap[orderedDecl.node]; ok {
+			origIdx := originalPosMap[orderedDecl.node]
+			
+			// Check if this declaration has standalone comments
+			if standaloneStrs, hasStandalone := declToStandalone[orderedDecl.node]; hasStandalone {
+				// Remove standalone comments from this declaration's Start
+				switch d := dstDecl.(type) {
+				case *dst.FuncDecl:
+					d.Decs.Start = removeStandaloneFromStart(d.Decs.Start, standaloneStrs)
+				case *dst.GenDecl:
+					d.Decs.Start = removeStandaloneFromStart(d.Decs.Start, standaloneStrs)
+				}
+				
+				// If this declaration moved from position 0 to a later position,
+				// its standalone comments were already collected in the pre-pass
+				if origIdx == 0 && newIdx > 0 {
+					// Don't re-add, they're already in firstDeclStandaloneComments
+				} else if origIdx > 0 && newIdx == 0 {
+					// This declaration moved TO position 0 from a later position
+					// Keep its standalone comments (don't remove them)
+					switch d := dstDecl.(type) {
+					case *dst.FuncDecl:
+						d.Decs.Start = append(standaloneStrs, d.Decs.Start...)
+					case *dst.GenDecl:
+						d.Decs.Start = append(standaloneStrs, d.Decs.Start...)
+					}
+				} else {
+					// Declaration didn't cross the first position boundary
+					// Keep standalone comments with it
+					switch d := dstDecl.(type) {
+					case *dst.FuncDecl:
+						d.Decs.Start = append(standaloneStrs, d.Decs.Start...)
+					case *dst.GenDecl:
+						d.Decs.Start = append(standaloneStrs, d.Decs.Start...)
+					}
+				}
+			}
+			
+			// Add standalone comments from declarations that moved away from position 0
+			if newIdx == 0 && len(firstDeclStandaloneComments) > 0 {
+				switch d := dstDecl.(type) {
+				case *dst.FuncDecl:
+					d.Decs.Start = append(firstDeclStandaloneComments, d.Decs.Start...)
+				case *dst.GenDecl:
+					d.Decs.Start = append(firstDeclStandaloneComments, d.Decs.Start...)
+				}
+				firstDeclStandaloneComments = nil // Clear so we don't add again
+			}
+			
+			newDstDecls = append(newDstDecls, dstDecl)
+		}
+	}
+
+	// Update the dst file with reordered declarations
+	dstFile.Decls = newDstDecls
+
+	// Format the file using the restorer
+	// dst preserves all decorations (comments) perfectly
+	restorer := decorator.NewRestorer()
+	var buf bytes.Buffer
+	err = restorer.Fprint(&buf, dstFile)
 	if err != nil {
 		pass.Report(analysis.Diagnostic{
 			Pos:     file.Pos(),
 			Message: fmt.Sprintf("failed to format fixed file: %v", err),
 		})
-
 		return
 	}
 
+	output := buf.Bytes()
+
 	// Write to file
-	err = os.WriteFile(filePath, buf.Bytes(), fileMode)
+	err = os.WriteFile(filePath, output, fileMode)
 	if err != nil {
 		pass.Report(analysis.Diagnostic{
 			Pos:     file.Pos(),
 			Message: fmt.Sprintf("failed to write fixed file: %v", err),
 		})
-
 		return
 	}
 }

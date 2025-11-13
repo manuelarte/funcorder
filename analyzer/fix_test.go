@@ -125,12 +125,12 @@ func (m MyStruct) GetName() string {
 `,
 			expected: `package fix
 
+// This is a standalone comment
+// It has newlines on both sides
+
 type MyStruct struct {
 	Name string
 }
-
-// This is a standalone comment
-// It has newlines on both sides
 
 func NewMyStruct() *MyStruct {
 	return &MyStruct{}
@@ -248,12 +248,100 @@ func verifyFixedFile(t *testing.T, testFile, expected, desc, description, input 
 	expectedTrimmed := strings.TrimSpace(expected)
 
 	if got != expectedTrimmed {
-		t.Errorf("Fix failed for %s\n\nGot:\n%s\n\nExpected:\n%s\n\nDescription: %s",
-			desc, got, expectedTrimmed, description)
+		diff := computeDiff(expectedTrimmed, got)
+		t.Errorf("Fix failed for %s\n\nDescription: %s\n\nDiff:\n%s\n\nFull Got:\n%s\n\nFull Expected:\n%s",
+			desc, description, diff, got, expectedTrimmed)
 	}
 
 	// Verify comments are preserved (only if the input had comments)
 	if strings.Contains(input, "Comment") && !strings.Contains(got, "Comment") {
 		t.Errorf("Comments were lost in fix for %s", desc)
 	}
+}
+
+// computeDiff computes a unified diff between expected and got.
+func computeDiff(expected, got string) string {
+	expectedLines := strings.Split(expected, "\n")
+	gotLines := strings.Split(got, "\n")
+
+	var diff strings.Builder
+	diff.WriteString("--- expected\n")
+	diff.WriteString("+++ got\n")
+	diff.WriteString("@@ -1,0 +1,0 @@\n") // Placeholder, will be updated if we find differences
+
+	// Simple unified diff algorithm
+	i, j := 0, 0
+	hasChanges := false
+
+	for i < len(expectedLines) || j < len(gotLines) {
+		if i < len(expectedLines) && j < len(gotLines) && expectedLines[i] == gotLines[j] {
+			// Lines match, output context
+			diff.WriteString(" ")
+			diff.WriteString(expectedLines[i])
+			diff.WriteString("\n")
+			i++
+			j++
+		} else {
+			hasChanges = true
+			// Find the next matching line
+			nextMatchI := i
+			nextMatchJ := j
+			foundMatch := false
+
+			// Look ahead for matching lines
+			for lookAhead := 1; lookAhead <= 3 && (i+lookAhead < len(expectedLines) || j+lookAhead < len(gotLines)); lookAhead++ {
+				if i+lookAhead < len(expectedLines) && j < len(gotLines) && expectedLines[i+lookAhead] == gotLines[j] {
+					nextMatchI = i + lookAhead
+					nextMatchJ = j
+					foundMatch = true
+					break
+				}
+				if i < len(expectedLines) && j+lookAhead < len(gotLines) && expectedLines[i] == gotLines[j+lookAhead] {
+					nextMatchI = i
+					nextMatchJ = j + lookAhead
+					foundMatch = true
+					break
+				}
+			}
+
+			// Output deletions
+			for k := i; k < nextMatchI; k++ {
+				diff.WriteString("-")
+				diff.WriteString(expectedLines[k])
+				diff.WriteString("\n")
+			}
+
+			// Output additions
+			for k := j; k < nextMatchJ; k++ {
+				diff.WriteString("+")
+				diff.WriteString(gotLines[k])
+				diff.WriteString("\n")
+			}
+
+			if foundMatch {
+				i = nextMatchI
+				j = nextMatchJ
+			} else {
+				// No match found, advance both
+				if i < len(expectedLines) {
+					diff.WriteString("-")
+					diff.WriteString(expectedLines[i])
+					diff.WriteString("\n")
+					i++
+				}
+				if j < len(gotLines) {
+					diff.WriteString("+")
+					diff.WriteString(gotLines[j])
+					diff.WriteString("\n")
+					j++
+				}
+			}
+		}
+	}
+
+	if !hasChanges {
+		return "No differences found (but strings don't match - check whitespace)"
+	}
+
+	return diff.String()
 }
