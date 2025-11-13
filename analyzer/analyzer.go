@@ -33,6 +33,8 @@ func NewAnalyzer() *analysis.Analyzer {
 		"Checks if the exported methods of a structure are placed before the unexported ones.")
 	a.Flags.BoolVar(&f.alphabeticalCheck, AlphabeticalCheckName, false,
 		"Checks if the constructors and/or structure methods are sorted alphabetically.")
+	a.Flags.BoolVar(&f.fix, "fix", false,
+		"Automatically fix code layout issues by reordering functions, methods, and constructors.")
 
 	return a
 }
@@ -41,6 +43,7 @@ type funcorder struct {
 	constructorCheck  bool
 	structMethodCheck bool
 	alphabeticalCheck bool
+	fix               bool
 }
 
 func (f *funcorder) run(pass *analysis.Pass) (any, error) {
@@ -71,10 +74,22 @@ func (f *funcorder) run(pass *analysis.Pass) (any, error) {
 		(*ast.TypeSpec)(nil),
 	}
 
+	// Collect all files for fixing
+	var filesToFix []*ast.File
+
 	insp.Preorder(nodeFilter, func(n ast.Node) {
 		switch node := n.(type) {
 		case *ast.File:
-			fp.Analyze(pass)
+			// Collect file for later fixing
+			if f.fix {
+				filesToFix = append(filesToFix, node)
+			}
+			// Analyze the previous file's data (if not fixing)
+			// Note: Preorder visits File before its children, so when we hit a new File,
+			// we've already processed all children of the previous File
+			if !f.fix {
+				fp.Analyze(pass)
+			}
 			fp.ResetStructs()
 
 		case *ast.FuncDecl:
@@ -85,7 +100,33 @@ func (f *funcorder) run(pass *analysis.Pass) (any, error) {
 		}
 	})
 
-	fp.Analyze(pass)
+	// Analyze the last file (if not in fix mode)
+	// This is needed because we only analyze when encountering the next file
+	if !f.fix {
+		fp.Analyze(pass)
+	}
+
+	// Fix files after all declarations have been collected
+	if f.fix {
+		for _, file := range filesToFix {
+			// Reset and recollect for this file
+			fp.ResetStructs()
+			// Re-collect declarations for this file
+			for _, decl := range file.Decls {
+				switch d := decl.(type) {
+				case *ast.FuncDecl:
+					fp.AddFuncDecl(d)
+				case *ast.GenDecl:
+					for _, spec := range d.Specs {
+						if typeSpec, ok := spec.(*ast.TypeSpec); ok {
+							fp.AddTypeSpec(typeSpec)
+						}
+					}
+				}
+			}
+			internal.FixFile(pass, file, fp, enabledCheckers)
+		}
+	}
 
 	//nolint:nilnil //any, error
 	return nil, nil
