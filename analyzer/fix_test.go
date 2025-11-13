@@ -63,7 +63,7 @@ func (m MyStruct) GetName() string {
 }
 `,
 			options: map[string]string{
-				"fix": "true",
+				"autofix": "true",
 			},
 			description: "Comments should be preserved when reordering",
 		},
@@ -98,7 +98,7 @@ func NewMyStruct() *MyStruct {
 var GlobalVar = "test"
 `,
 			options: map[string]string{
-				"fix": "true",
+				"autofix": "true",
 			},
 			description: "Other top-level declarations (const, var) should be preserved",
 		},
@@ -145,7 +145,7 @@ func (m MyStruct) GetName() string {
 }
 `,
 			options: map[string]string{
-				"fix": "true",
+				"autofix": "true",
 			},
 			description: "Standalone comments with newlines on both sides should be preserved",
 		},
@@ -190,7 +190,7 @@ func (m MyStruct) GetName() string {
 }
 `,
 			options: map[string]string{
-				"fix": "true",
+				"autofix": "true",
 			},
 			description: "Imports should be preserved in their correct position after package declaration",
 		},
@@ -241,7 +241,7 @@ func (m MyStruct) Validate() {
 }
 `,
 			options: map[string]string{
-				"fix": "true",
+				"autofix": "true",
 			},
 			description: "Inline nolint comments within function bodies should be preserved",
 		},
@@ -328,9 +328,123 @@ func (m *MyStruct) Validate() bool {
 }
 `,
 			options: map[string]string{
-				"fix": "true",
+				"autofix": "true",
 			},
 			description: "Functions with multi-line signatures and internal newlines should be preserved",
+		},
+		{
+			desc: "generic constructor preserved",
+			input: `package fix
+
+func NewMyStruct[T any](data T) *MyStruct {
+	return &MyStruct{Data: data}
+}
+
+type MyStruct struct {
+	Data interface{}
+}
+
+func (m *MyStruct) GetData() interface{} {
+	return m.Data
+}
+`,
+			expected: `package fix
+
+type MyStruct struct {
+	Data interface{}
+}
+
+func NewMyStruct[T any](data T) *MyStruct {
+	return &MyStruct{Data: data}
+}
+
+func (m *MyStruct) GetData() interface{} {
+	return m.Data
+}
+`,
+			options: map[string]string{
+				"autofix": "true",
+			},
+			description: "Generic constructors should be preserved and reordered correctly",
+		},
+		{
+			desc: "generic constructor with interface constraint preserved",
+			input: `package fix
+
+import "strings"
+
+type logOutputFormat int
+
+const (
+	LogOutputFormatAuto logOutputFormat = iota
+	LogOutputFormatConsole
+	LogOutputFormatJSON
+)
+
+type logoutPutFormatOrString interface {
+	string | logOutputFormat
+}
+
+func NewLogOutputFormat[T logoutPutFormatOrString](format T) logOutputFormat {
+	switch v := any(format).(type) {
+	case string:
+		switch strings.ToLower(v) {
+		case "auto":
+			return LogOutputFormatAuto
+		case "console":
+			return LogOutputFormatConsole
+		case "json":
+			return LogOutputFormatJSON
+		default:
+			panic("unknown log output format: " + v)
+		}
+	case logOutputFormat:
+		return v
+	default:
+		panic("unknown type for log output format")
+	}
+}
+`,
+			expected: `package fix
+
+import "strings"
+
+type logOutputFormat int
+
+const (
+	LogOutputFormatAuto logOutputFormat = iota
+	LogOutputFormatConsole
+	LogOutputFormatJSON
+)
+
+type logoutPutFormatOrString interface {
+	string | logOutputFormat
+}
+
+func NewLogOutputFormat[T logoutPutFormatOrString](format T) logOutputFormat {
+	switch v := any(format).(type) {
+	case string:
+		switch strings.ToLower(v) {
+		case "auto":
+			return LogOutputFormatAuto
+		case "console":
+			return LogOutputFormatConsole
+		case "json":
+			return LogOutputFormatJSON
+		default:
+			panic("unknown log output format: " + v)
+		}
+	case logOutputFormat:
+		return v
+	default:
+		panic("unknown type for log output format")
+	}
+}
+`,
+			options: map[string]string{
+				"autofix": "true",
+			},
+			description: "Generic functions returning non-struct types should be preserved (typevar_generics.go scenario - not a struct constructor so order unchanged)",
 		},
 	}
 
@@ -363,6 +477,8 @@ func setupTestFile(t *testing.T, input string) string {
 // setupAnalyzer creates and configures the analyzer with the given options.
 func setupAnalyzer(options map[string]string) *analysis.Analyzer {
 	a := NewAnalyzer()
+
+	// No need to add flags - autofix flag is already defined in NewAnalyzer()
 
 	for k, v := range options {
 		err := a.Flags.Set(k, v)

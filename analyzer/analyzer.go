@@ -33,12 +33,7 @@ func NewAnalyzer() *analysis.Analyzer {
 		"Checks if the exported methods of a structure are placed before the unexported ones.")
 	a.Flags.BoolVar(&f.alphabeticalCheck, AlphabeticalCheckName, false,
 		"Checks if the constructors and/or structure methods are sorted alphabetically.")
-
-	// Add fix flag for golangci-lint autofix support
-	// When golangci-lint runs with --fix, it automatically passes -fix to analyzers that have this flag.
-	// This enables automatic code fixing when users run: golangci-lint run --fix
-	// Note: singlechecker.Main also provides a -fix flag for standalone usage.
-	a.Flags.BoolVar(&f.fix, "fix", false,
+	a.Flags.BoolVar(&f.fix, "autofix", false,
 		"Automatically fix code layout issues by reordering functions, methods, and constructors.")
 
 	return a
@@ -77,11 +72,16 @@ func (f *funcorder) run(pass *analysis.Pass) (any, error) {
 		return nil, nil
 	}
 
-	// Read fix flag value - works for both standalone (via singlechecker) and golangci-lint
-	// The flag may be set by our analyzer or by singlechecker.Main
-	// For golangci-lint: when --fix is used, it passes -fix to analyzers that support it
+	// Read autofix flag value - works for both standalone and golangci-lint
+	// For golangci-lint: when --fix is used, it passes flags to analyzers
+	if autofixFlag := pass.Analyzer.Flags.Lookup("autofix"); autofixFlag != nil {
+		f.fix = autofixFlag.Value.String() == "true"
+	}
+	// Also check for -fix flag (from singlechecker or golangci-lint) for compatibility
 	if fixFlag := pass.Analyzer.Flags.Lookup("fix"); fixFlag != nil {
-		f.fix = fixFlag.Value.String() == "true"
+		if fixFlag.Value.String() == "true" {
+			f.fix = true
+		}
 	}
 
 	enabledCheckers := f.buildEnabledCheckers()

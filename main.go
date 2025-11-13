@@ -7,9 +7,9 @@ import (
 )
 
 func main() {
-	// Note: The analyzer defines a -fix flag for golangci-lint integration.
-	// singlechecker.Main also provides a -fix flag, which may cause a conflict.
-	// However, for golangci-lint usage, singlechecker is not used, so the flag works correctly.
-	// If running as a standalone tool, singlechecker will handle the flag conflict.
-	singlechecker.Main(analyzer.NewAnalyzer())
+	// singlechecker.Main automatically adds a -fix flag to analyzers.
+	// The analyzer reads the flag value in run() from pass.Analyzer.Flags.
+	// For golangci-lint usage, the flag is also handled automatically.
+	a := analyzer.NewAnalyzer()
+	singlechecker.Main(a)
 }

@@ -235,6 +235,31 @@ func determineOrder(decls []declaration, fp *FileProcessor, features Feature) []
 		ordered = append(ordered, structDecls...)
 	}
 
+	// Process constructors/methods for non-struct types (e.g., int, interface, etc.)
+	// These were categorized as constructors but their return type is not a struct
+	for structName, constructors := range categories.constructorsByStruct {
+		if _, isStruct := categories.structMap[structName]; !isStruct {
+			// This type is not a struct, add constructors as "other" declarations
+			for _, c := range constructors {
+				if !added[c.pos] {
+					ordered = append(ordered, c)
+					added[c.pos] = true
+				}
+			}
+		}
+	}
+	for structName, methods := range categories.methodsByStruct {
+		if _, isStruct := categories.structMap[structName]; !isStruct {
+			// This type is not a struct, add methods as "other" declarations
+			for _, m := range methods {
+				if !added[m.pos] {
+					ordered = append(ordered, m)
+					added[m.pos] = true
+				}
+			}
+		}
+	}
+
 	remainingDecls := addRemainingDeclarations(categories.otherDecls, added)
 	ordered = append(ordered, remainingDecls...)
 
@@ -270,14 +295,23 @@ func categorizeDeclarations(decls []declaration) declarationCategories {
 
 // categorizeTypeDecl categorizes a type declaration.
 func categorizeTypeDecl(node *ast.GenDecl, d declaration, categories *declarationCategories) {
+	hasStruct := false
+
 	for _, spec := range node.Specs {
 		if typeSpec, ok := spec.(*ast.TypeSpec); ok {
 			if _, isStruct := typeSpec.Type.(*ast.StructType); isStruct {
 				structName := typeSpec.Name.Name
 				categories.structMap[structName] = d
 				categories.structOrder = append(categories.structOrder, structName)
+				hasStruct = true
 			}
 		}
+	}
+
+	// If this GenDecl doesn't contain any struct types, add it to otherDecls
+	// (handles interfaces, type aliases, etc.)
+	if !hasStruct {
+		categories.otherDecls = append(categories.otherDecls, d)
 	}
 }
 
@@ -343,17 +377,23 @@ func addStructWithRelatedDeclarations(
 	features Feature,
 	added map[token.Pos]bool,
 ) []declaration {
-	structDecl := structMap[structName]
+	structDecl, hasStruct := structMap[structName]
 	sh, exists := fp.structs[structName]
 
 	var result []declaration
 
-	if !exists || sh.Struct == nil {
-		// Struct not in our map, add it as-is
-		result = append(result, structDecl)
-		added[structDecl.pos] = true
+	if !hasStruct || !exists || sh.Struct == nil {
+		// Struct not in our map (might be a non-struct type like int, interface, etc.)
+		// Add any constructors/methods as "other" declarations
+		otherDecls := make([]declaration, 0)
+		if constructors := constructorsByStruct[structName]; len(constructors) > 0 {
+			otherDecls = append(otherDecls, constructors...)
+		}
+		if methods := methodsByStruct[structName]; len(methods) > 0 {
+			otherDecls = append(otherDecls, methods...)
+		}
 
-		return result
+		return otherDecls
 	}
 
 	// Add struct declaration
