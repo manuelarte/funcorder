@@ -194,6 +194,144 @@ func (m MyStruct) GetName() string {
 			},
 			description: "Imports should be preserved in their correct position after package declaration",
 		},
+		{
+			desc: "inline nolint comments preserved",
+			input: `package fix
+
+func NewMyStruct() *MyStruct {
+	x := make([]byte, 10) //nolint:gosec
+	return &MyStruct{Data: x}
+}
+
+type MyStruct struct {
+	Data []byte
+}
+
+func (m MyStruct) Process() {
+	result := len(m.Data) //nolint:gocritic
+	_ = result
+}
+
+func (m MyStruct) Validate() {
+	if len(m.Data) == 0 { //nolint:gocritic
+		return
+	}
+}
+`,
+			expected: `package fix
+
+type MyStruct struct {
+	Data []byte
+}
+
+func NewMyStruct() *MyStruct {
+	x := make([]byte, 10) //nolint:gosec
+	return &MyStruct{Data: x}
+}
+
+func (m MyStruct) Process() {
+	result := len(m.Data) //nolint:gocritic
+	_ = result
+}
+
+func (m MyStruct) Validate() {
+	if len(m.Data) == 0 { //nolint:gocritic
+		return
+	}
+}
+`,
+			options: map[string]string{
+				"fix": "true",
+			},
+			description: "Inline nolint comments within function bodies should be preserved",
+		},
+		{
+			desc: "functions with internal newlines preserved",
+			input: `package fix
+
+func NewMyStruct(
+	name string,
+	age int,
+) *MyStruct {
+	return &MyStruct{
+		Name: name,
+		Age:  age,
+	}
+}
+
+type MyStruct struct {
+	Name string
+	Age  int
+}
+
+func (m *MyStruct) Process(
+	data []byte,
+	options map[string]string,
+) error {
+	if len(data) == 0 {
+		return nil
+	}
+
+	return nil
+}
+
+func (m *MyStruct) Validate() bool {
+	if m.Name == "" {
+		return false
+	}
+
+	if m.Age < 0 {
+		return false
+	}
+
+	return true
+}
+`,
+			expected: `package fix
+
+type MyStruct struct {
+	Name string
+	Age  int
+}
+
+func NewMyStruct(
+	name string,
+	age int,
+) *MyStruct {
+	return &MyStruct{
+		Name: name,
+		Age:  age,
+	}
+}
+
+func (m *MyStruct) Process(
+	data []byte,
+	options map[string]string,
+) error {
+	if len(data) == 0 {
+		return nil
+	}
+
+	return nil
+}
+
+func (m *MyStruct) Validate() bool {
+	if m.Name == "" {
+		return false
+	}
+
+	if m.Age < 0 {
+		return false
+	}
+
+	return true
+}
+`,
+			options: map[string]string{
+				"fix": "true",
+			},
+			description: "Functions with multi-line signatures and internal newlines should be preserved",
+		},
 	}
 
 	for _, test := range testCasesWithExpected {
