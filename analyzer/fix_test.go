@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/pmezard/go-difflib/difflib"
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/analysistest"
 )
@@ -264,84 +265,20 @@ func computeDiff(expected, got string) string {
 	expectedLines := strings.Split(expected, "\n")
 	gotLines := strings.Split(got, "\n")
 
-	var diff strings.Builder
-	diff.WriteString("--- expected\n")
-	diff.WriteString("+++ got\n")
-	diff.WriteString("@@ -1,0 +1,0 @@\n") // Placeholder, will be updated if we find differences
-
-	// Simple unified diff algorithm
-	i, j := 0, 0
-	hasChanges := false
-
-	for i < len(expectedLines) || j < len(gotLines) {
-		if i < len(expectedLines) && j < len(gotLines) && expectedLines[i] == gotLines[j] {
-			// Lines match, output context
-			diff.WriteString(" ")
-			diff.WriteString(expectedLines[i])
-			diff.WriteString("\n")
-			i++
-			j++
-		} else {
-			hasChanges = true
-			// Find the next matching line
-			nextMatchI := i
-			nextMatchJ := j
-			foundMatch := false
-
-			// Look ahead for matching lines
-			for lookAhead := 1; lookAhead <= 3 && (i+lookAhead < len(expectedLines) || j+lookAhead < len(gotLines)); lookAhead++ {
-				if i+lookAhead < len(expectedLines) && j < len(gotLines) && expectedLines[i+lookAhead] == gotLines[j] {
-					nextMatchI = i + lookAhead
-					nextMatchJ = j
-					foundMatch = true
-					break
-				}
-				if i < len(expectedLines) && j+lookAhead < len(gotLines) && expectedLines[i] == gotLines[j+lookAhead] {
-					nextMatchI = i
-					nextMatchJ = j + lookAhead
-					foundMatch = true
-					break
-				}
-			}
-
-			// Output deletions
-			for k := i; k < nextMatchI; k++ {
-				diff.WriteString("-")
-				diff.WriteString(expectedLines[k])
-				diff.WriteString("\n")
-			}
-
-			// Output additions
-			for k := j; k < nextMatchJ; k++ {
-				diff.WriteString("+")
-				diff.WriteString(gotLines[k])
-				diff.WriteString("\n")
-			}
-
-			if foundMatch {
-				i = nextMatchI
-				j = nextMatchJ
-			} else {
-				// No match found, advance both
-				if i < len(expectedLines) {
-					diff.WriteString("-")
-					diff.WriteString(expectedLines[i])
-					diff.WriteString("\n")
-					i++
-				}
-				if j < len(gotLines) {
-					diff.WriteString("+")
-					diff.WriteString(gotLines[j])
-					diff.WriteString("\n")
-					j++
-				}
-			}
-		}
+	diff, err := difflib.GetUnifiedDiffString(difflib.UnifiedDiff{
+		A:        expectedLines,
+		B:        gotLines,
+		FromFile: "expected",
+		ToFile:   "got",
+		Context:  3,
+	})
+	if err != nil {
+		return "Failed to generate diff: " + err.Error()
 	}
 
-	if !hasChanges {
+	if diff == "" {
 		return "No differences found (but strings don't match - check whitespace)"
 	}
 
-	return diff.String()
+	return diff
 }

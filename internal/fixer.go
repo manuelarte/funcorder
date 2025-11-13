@@ -1,24 +1,15 @@
 package internal
 
 import (
-	"bytes"
 	"cmp"
 	"fmt"
 	"go/ast"
 	"go/token"
-	"os"
 	"slices"
 
 	"github.com/dave/dst"
 	"github.com/dave/dst/decorator"
 	"golang.org/x/tools/go/analysis"
-)
-
-const (
-	// packageDeclEstimate is a rough estimate for the end position of a package declaration.
-	packageDeclEstimate = 20
-	// fileMode is the file permission mode for writing fixed files.
-	fileMode = 0o600
 )
 
 // NeedsFixing checks if a file needs fixing by comparing current order with desired order.
@@ -54,10 +45,10 @@ func FixFile(pass *analysis.Pass, file *ast.File, fp *FileProcessor, features Fe
 
 // declaration represents a top-level declaration with its associated comments.
 type declaration struct {
-	node            ast.Decl
-	docComments     []*ast.CommentGroup // DOC comments (attached via Doc field)
+	node               ast.Decl
+	docComments        []*ast.CommentGroup // DOC comments (attached via Doc field)
 	standaloneComments []*ast.CommentGroup // Standalone comments (in file.Comments)
-	pos              token.Pos
+	pos                token.Pos
 }
 
 // collectDeclarations collects all top-level declarations from the file.
@@ -80,15 +71,7 @@ func collectDeclarations(file *ast.File, _ *FileProcessor) []declaration {
 			// Find comments that are immediately before this declaration (DOC comments)
 			for _, cg := range file.Comments {
 				// Skip if this is already a standalone comment
-				isStandalone := false
-				for _, sc := range standaloneComments {
-					if sc == cg {
-						isStandalone = true
-
-						break
-					}
-				}
-				if isStandalone {
+				if isCommentInList(cg, standaloneComments) {
 					continue
 				}
 
@@ -100,10 +83,10 @@ func collectDeclarations(file *ast.File, _ *FileProcessor) []declaration {
 		}
 
 		decls = append(decls, declaration{
-			node:              d,
-			docComments:       docComments,
+			node:               d,
+			docComments:        docComments,
 			standaloneComments: standaloneComments,
-			pos:               d.Pos(),
+			pos:                d.Pos(),
 		})
 	}
 
@@ -131,6 +114,17 @@ func getDocComments(d ast.Decl) []*ast.CommentGroup {
 	}
 
 	return comments
+}
+
+// isCommentInList checks if a comment group is in the given list.
+func isCommentInList(cg *ast.CommentGroup, list []*ast.CommentGroup) bool {
+	for _, sc := range list {
+		if sc == cg {
+			return true
+		}
+	}
+
+	return false
 }
 
 // getPreviousEnd gets the end position of the previous declaration.
@@ -516,78 +510,83 @@ func needsReordering(original, ordered []declaration) bool {
 }
 
 // removeStandaloneFromStart removes standalone comment strings from Start decorations.
-func removeStandaloneFromStart(startDecs []string, standaloneStrs []string) []string {
+func removeStandaloneFromStart(startDecs, standaloneStrs []string) []string {
 	// Build a set of standalone strings for fast lookup
 	standaloneSet := make(map[string]bool)
+
 	for _, s := range standaloneStrs {
 		standaloneSet[s] = true
 	}
-	
+
 	// Filter out standalone comments from Start decorations
 	var result []string
+
 	for _, dec := range startDecs {
 		if !standaloneSet[dec] {
 			result = append(result, dec)
 		}
 	}
-	
+
 	return result
 }
 
-// writeFixedFileWithDst writes the fixed file using dst to preserve comments.
-func writeFixedFileWithDst(pass *analysis.Pass, file *ast.File, originalDecls []declaration, orderedDecls []declaration) {
-	// Get the file path
-	fset := pass.Fset
-	filePath := fset.File(file.Pos()).Name()
-
-	if filePath == "" {
-		return
-	}
-
-	// Convert ast.File to dst.File with decorator
-	dec := decorator.NewDecorator(fset)
-	dstFile, err := dec.DecorateFile(file)
-	if err != nil {
-		pass.Report(analysis.Diagnostic{
-			Pos:     file.Pos(),
-			Message: fmt.Sprintf("failed to decorate file: %v", err),
-		})
-		return
-	}
-
-	// Build a map from ast.Decl to dst.Decl for reordering
+// buildDeclMap builds a map from ast.Decl to dst.Decl for reordering.
+func buildDeclMap(file *ast.File, dstFile *dst.File) map[ast.Decl]dst.Decl {
 	declMap := make(map[ast.Decl]dst.Decl)
+
 	for i, astDecl := range file.Decls {
 		if i < len(dstFile.Decls) {
 			declMap[astDecl] = dstFile.Decls[i]
 		}
 	}
 
-	// Identify standalone comments from the original ordered declarations
-	// Standalone comments are those in the standaloneComments field
+	return declMap
+}
+
+// buildStandaloneCommentsMap builds a map of standalone comments from declarations.
+func buildStandaloneCommentsMap(orderedDecls []declaration) map[ast.Decl][]string {
 	declToStandalone := make(map[ast.Decl][]string)
+
 	for _, decl := range orderedDecls {
 		if len(decl.standaloneComments) > 0 {
 			// Convert ast comment groups to decoration strings
 			var standaloneStrs []string
+
 			for _, cg := range decl.standaloneComments {
 				for _, comment := range cg.List {
 					standaloneStrs = append(standaloneStrs, comment.Text)
 				}
+
 				standaloneStrs = append(standaloneStrs, "\n") // Blank line after standalone comment
 			}
+
 			declToStandalone[decl.node] = standaloneStrs
 		}
 	}
 
-	// Build a map of original positions from the ORIGINAL (unreordered) declarations
+	return declToStandalone
+}
+
+// buildOriginalPosMap builds a map of original positions from declarations.
+func buildOriginalPosMap(originalDecls []declaration) map[ast.Decl]int {
 	originalPosMap := make(map[ast.Decl]int)
+
 	for origIdx, decl := range originalDecls {
 		originalPosMap[decl.node] = origIdx
 	}
-	
-	// Pre-collect standalone comments from declarations that moved from position 0
+
+	return originalPosMap
+}
+
+// collectFirstDeclStandaloneComments collects standalone comments from declarations
+// that moved from position 0 to a later position.
+func collectFirstDeclStandaloneComments(
+	orderedDecls []declaration,
+	originalPosMap map[ast.Decl]int,
+	declToStandalone map[ast.Decl][]string,
+) []string {
 	var firstDeclStandaloneComments []string
+
 	for newIdx, orderedDecl := range orderedDecls {
 		origIdx := originalPosMap[orderedDecl.node]
 		// If this declaration moved from position 0 to a later position,
@@ -598,49 +597,62 @@ func writeFixedFileWithDst(pass *analysis.Pass, file *ast.File, originalDecls []
 			}
 		}
 	}
-	
-	// Reorder dst declarations based on our ordered list
+
+	return firstDeclStandaloneComments
+}
+
+// applyStandaloneCommentsToDecl applies standalone comments to a declaration based on position changes.
+func applyStandaloneCommentsToDecl(
+	dstDecl dst.Decl,
+	standaloneStrs []string,
+	origIdx, newIdx int,
+) {
+	// Remove standalone comments from this declaration's Start
+	switch d := dstDecl.(type) {
+	case *dst.FuncDecl:
+		d.Decs.Start = removeStandaloneFromStart(d.Decs.Start, standaloneStrs)
+	case *dst.GenDecl:
+		d.Decs.Start = removeStandaloneFromStart(d.Decs.Start, standaloneStrs)
+	}
+
+	// Handle standalone comments based on position changes
+	// If this declaration moved from position 0 to a later position,
+	// its standalone comments were already collected in the pre-pass
+	switch {
+	case origIdx == 0 && newIdx > 0:
+		// Don't re-add, they're already in firstDeclStandaloneComments
+	case origIdx > 0 && newIdx == 0, origIdx > 0 && newIdx > 0:
+		// This declaration moved TO position 0 from a later position,
+		// or didn't cross the first position boundary
+		// Keep its standalone comments (don't remove them)
+		switch d := dstDecl.(type) {
+		case *dst.FuncDecl:
+			d.Decs.Start = append(standaloneStrs, d.Decs.Start...)
+		case *dst.GenDecl:
+			d.Decs.Start = append(standaloneStrs, d.Decs.Start...)
+		}
+	}
+}
+
+// reorderDstDeclarations reorders dst declarations based on the ordered list.
+func reorderDstDeclarations(
+	orderedDecls []declaration,
+	declMap map[ast.Decl]dst.Decl,
+	originalPosMap map[ast.Decl]int,
+	declToStandalone map[ast.Decl][]string,
+	firstDeclStandaloneComments []string,
+) []dst.Decl {
 	newDstDecls := make([]dst.Decl, 0, len(orderedDecls))
-	
+
 	for newIdx, orderedDecl := range orderedDecls {
 		if dstDecl, ok := declMap[orderedDecl.node]; ok {
 			origIdx := originalPosMap[orderedDecl.node]
-			
+
 			// Check if this declaration has standalone comments
 			if standaloneStrs, hasStandalone := declToStandalone[orderedDecl.node]; hasStandalone {
-				// Remove standalone comments from this declaration's Start
-				switch d := dstDecl.(type) {
-				case *dst.FuncDecl:
-					d.Decs.Start = removeStandaloneFromStart(d.Decs.Start, standaloneStrs)
-				case *dst.GenDecl:
-					d.Decs.Start = removeStandaloneFromStart(d.Decs.Start, standaloneStrs)
-				}
-				
-				// If this declaration moved from position 0 to a later position,
-				// its standalone comments were already collected in the pre-pass
-				if origIdx == 0 && newIdx > 0 {
-					// Don't re-add, they're already in firstDeclStandaloneComments
-				} else if origIdx > 0 && newIdx == 0 {
-					// This declaration moved TO position 0 from a later position
-					// Keep its standalone comments (don't remove them)
-					switch d := dstDecl.(type) {
-					case *dst.FuncDecl:
-						d.Decs.Start = append(standaloneStrs, d.Decs.Start...)
-					case *dst.GenDecl:
-						d.Decs.Start = append(standaloneStrs, d.Decs.Start...)
-					}
-				} else {
-					// Declaration didn't cross the first position boundary
-					// Keep standalone comments with it
-					switch d := dstDecl.(type) {
-					case *dst.FuncDecl:
-						d.Decs.Start = append(standaloneStrs, d.Decs.Start...)
-					case *dst.GenDecl:
-						d.Decs.Start = append(standaloneStrs, d.Decs.Start...)
-					}
-				}
+				applyStandaloneCommentsToDecl(dstDecl, standaloneStrs, origIdx, newIdx)
 			}
-			
+
 			// Add standalone comments from declarations that moved away from position 0
 			if newIdx == 0 && len(firstDeclStandaloneComments) > 0 {
 				switch d := dstDecl.(type) {
@@ -649,38 +661,66 @@ func writeFixedFileWithDst(pass *analysis.Pass, file *ast.File, originalDecls []
 				case *dst.GenDecl:
 					d.Decs.Start = append(firstDeclStandaloneComments, d.Decs.Start...)
 				}
+
 				firstDeclStandaloneComments = nil // Clear so we don't add again
 			}
-			
+
 			newDstDecls = append(newDstDecls, dstDecl)
 		}
 	}
 
-	// Update the dst file with reordered declarations
-	dstFile.Decls = newDstDecls
+	return newDstDecls
+}
 
-	// Format the file using the restorer
-	// dst preserves all decorations (comments) perfectly
-	restorer := decorator.NewRestorer()
-	var buf bytes.Buffer
-	err = restorer.Fprint(&buf, dstFile)
-	if err != nil {
-		pass.Report(analysis.Diagnostic{
-			Pos:     file.Pos(),
-			Message: fmt.Sprintf("failed to format fixed file: %v", err),
-		})
+// writeFixedFileWithDst writes the fixed file using dst to preserve comments.
+func writeFixedFileWithDst(
+	pass *analysis.Pass,
+	file *ast.File,
+	originalDecls []declaration,
+	orderedDecls []declaration,
+) {
+	// Get the file path
+	fset := pass.Fset
+	filePath := fset.File(file.Pos()).Name()
+
+	if filePath == "" {
 		return
 	}
 
-	output := buf.Bytes()
+	// Convert ast.File to dst.File with decorator
+	dec := decorator.NewDecorator(fset)
 
-	// Write to file
-	err = os.WriteFile(filePath, output, fileMode)
+	dstFile, err := dec.DecorateFile(file)
 	if err != nil {
 		pass.Report(analysis.Diagnostic{
 			Pos:     file.Pos(),
-			Message: fmt.Sprintf("failed to write fixed file: %v", err),
+			Message: fmt.Sprintf("failed to decorate file: %v", err),
 		})
+
+		return
+	}
+
+	// Build maps and collect standalone comments
+	declMap := buildDeclMap(file, dstFile)
+	declToStandalone := buildStandaloneCommentsMap(orderedDecls)
+	originalPosMap := buildOriginalPosMap(originalDecls)
+	firstDeclStandaloneComments := collectFirstDeclStandaloneComments(orderedDecls, originalPosMap, declToStandalone)
+
+	// Reorder dst declarations based on our ordered list
+	newDstDecls := reorderDstDeclarations(
+		orderedDecls,
+		declMap,
+		originalPosMap,
+		declToStandalone,
+		firstDeclStandaloneComments,
+	)
+
+	// Update the dst file with reordered declarations
+	dstFile.Decls = newDstDecls
+
+	// Format and write the file
+	writeErr := writeFormattedFile(pass, file, dstFile, filePath)
+	if writeErr != nil {
 		return
 	}
 }
