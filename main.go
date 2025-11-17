@@ -7,5 +7,9 @@ import (
 )
 
 func main() {
-	singlechecker.Main(analyzer.NewAnalyzer())
+	// singlechecker.Main automatically adds a -fix flag to analyzers.
+	// The analyzer reads the flag value in run() from pass.Analyzer.Flags.
+	// For golangci-lint usage, the flag is also handled automatically.
+	a := analyzer.NewAnalyzer()
+	singlechecker.Main(a)
 }
