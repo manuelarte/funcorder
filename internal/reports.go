@@ -67,3 +67,12 @@ func reportAdjacentStructMethodsNotSortedAlphabetically(
 			otherMethod.Name, structSpec.Name, method.Name),
 	})
 }
+
+func reportUnexportedFuncBeforeExportedFunc(pass *analysis.Pass, unexportedFunc, exportedFunc *ast.FuncDecl) {
+	pass.Report(analysis.Diagnostic{
+		Pos: unexportedFunc.Pos(),
+		URL: "https://github.com/manuelarte/funcorder?tab=readme-ov-file#check-exported-functions-are-placed-before-unexported-functions", //nolint:lll // url
+		Message: fmt.Sprintf("unexported function %q should be placed after the exported function %q",
+			unexportedFunc.Name, exportedFunc.Name),
+	})
+}

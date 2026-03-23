@@ -66,6 +66,15 @@ func TestAnalyzer(t *testing.T) {
 				AlphabeticalCheckName: "false",
 			},
 		},
+		{
+			desc:     "function order check",
+			patterns: "function-order",
+			options: map[string]string{
+				ConstructorCheckName:       "false",
+				StructMethodCheckName:      "false",
+				PackageLevelOrderCheckName: "true",
+			},
+		},
 	}
 
 	for _, test := range testCases {
