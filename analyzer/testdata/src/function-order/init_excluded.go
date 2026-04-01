@@ -1,4 +1,4 @@
-package packagelevelorder
+package functionorder
 
 // init is excluded from the rule; exported function after init must not be reported.
 

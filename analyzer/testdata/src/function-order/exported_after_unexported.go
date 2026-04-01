@@ -1,4 +1,4 @@
-package packagelevelorder
+package functionorder
 
 // unexported function appears before exported — violation expected.
 
