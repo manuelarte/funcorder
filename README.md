@@ -11,6 +11,7 @@
     - [Check exported methods are placed before unexported methods](#check-exported-methods-are-placed-before-unexported-methods)
     - [Check `Constructors` functions are placed after struct declaration](#check-constructors-functions-are-placed-after-struct-declaration)
     - [Check Constructors/Methods are sorted alphabetically](#check-constructorsmethods-are-sorted-alphabetically)
+    - [Check exported functions are placed before unexported functions](#check-exported-functions-are-placed-before-unexported-functions)
   - [Resources](#resources)
 
 Go Linter to check Functions/Methods Order.
@@ -38,6 +39,9 @@ linters:
       # Checks if the constructors and/or structure methods are sorted alphabetically.
       # Default: false
       alphabetical: true
+      # Checks that exported functions are placed before unexported functions.
+      # Default: false
+      function: true
 ```
 
 ### Standalone application
@@ -51,7 +55,7 @@ go install github.com/manuelarte/funcorder@latest
 And then use it with
 
 ```
-funcorder [-constructor=true|false] [-struct-method=true|false] [-alphabetical=true|false] ./...
+funcorder [-constructor=true|false] [-struct-method=true|false] [-alphabetical=true|false] [-function=true|false] ./...
 ```
 
 Parameters:
@@ -59,6 +63,7 @@ Parameters:
 - `constructor`: `true|false` (default `true`) Checks that constructors are placed after the structure declaration.
 - `struct-method`: `true|false` (default `true`) Checks if the exported methods of a structure are placed before the unexported ones.
 - `alphabetical`: `true|false` (default `false`) Checks if the constructors and/or structure methods are sorted alphabetically.
+- `function`: `true|false` (default `false`) Checks that exported functions are placed before unexported functions.
 
 ## 🚀 Features
 
@@ -251,6 +256,47 @@ func (m MyStruct) hello() string {
 }
 
 ...
+```
+
+</td></tr>
+
+</tbody>
+</table>
+
+### Check exported functions are placed before unexported functions
+
+This rule checks that exported functions (those with no receiver) are placed before unexported ones within each file.
+The `init` function is excluded from this rule.
+
+<table>
+<thead><tr><th>❌ Bad</th><th>✅ Good</th></tr></thead>
+<tbody>
+<tr><td>
+
+```go
+// ❌ unexported function placed
+// before exported function
+func helper() string {
+    return "helper"
+}
+
+func PublicFunc() string {
+    return "public"
+}
+```
+
+</td><td>
+
+```go
+// ✅ exported function placed
+// before unexported function
+func PublicFunc() string {
+    return "public"
+}
+
+func helper() string {
+    return "helper"
+}
 ```
 
 </td></tr>

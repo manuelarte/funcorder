@@ -14,6 +14,7 @@ const (
 	ConstructorCheckName  = "constructor"
 	StructMethodCheckName = "struct-method"
 	AlphabeticalCheckName = "alphabetical"
+	FunctionCheckName     = "function"
 )
 
 func NewAnalyzer() *analysis.Analyzer {
@@ -33,6 +34,8 @@ func NewAnalyzer() *analysis.Analyzer {
 		"Checks if the exported methods of a structure are placed before the unexported ones.")
 	a.Flags.BoolVar(&f.alphabeticalCheck, AlphabeticalCheckName, false,
 		"Checks if the constructors and/or structure methods are sorted alphabetically.")
+	a.Flags.BoolVar(&f.functionCheck, FunctionCheckName, false,
+		"Checks that exported functions are placed before unexported functions.")
 
 	return a
 }
@@ -41,6 +44,7 @@ type funcorder struct {
 	constructorCheck  bool
 	structMethodCheck bool
 	alphabeticalCheck bool
+	functionCheck     bool
 }
 
 func (f *funcorder) run(pass *analysis.Pass) (any, error) {
@@ -61,6 +65,10 @@ func (f *funcorder) run(pass *analysis.Pass) (any, error) {
 
 	if f.alphabeticalCheck {
 		enabledCheckers.Enable(internal.AlphabeticalCheck)
+	}
+
+	if f.functionCheck {
+		enabledCheckers.Enable(internal.FunctionCheck)
 	}
 
 	fp := internal.NewFileProcessor(enabledCheckers)

@@ -8,8 +8,9 @@ import (
 
 // FileProcessor Holder to store all the functions that are potential to be constructors and all the structs.
 type FileProcessor struct {
-	structs  map[string]*StructHolder
-	features Feature
+	structs       map[string]*StructHolder
+	features      Feature
+	topLevelFuncs []*ast.FuncDecl
 }
 
 // NewFileProcessor creates a new file processor.
@@ -28,13 +29,22 @@ func (fp *FileProcessor) Analyze(pass *analysis.Pass) {
 			sh.Analyze(pass)
 		}
 	}
+
+	if fp.features.IsEnabled(FunctionCheck) {
+		fp.analyzeFunctions(pass)
+	}
 }
 
 func (fp *FileProcessor) ResetStructs() {
 	fp.structs = make(map[string]*StructHolder)
+	fp.topLevelFuncs = nil
 }
 
 func (fp *FileProcessor) AddFuncDecl(n *ast.FuncDecl) {
+	if fp.features.IsEnabled(FunctionCheck) && n.Recv == nil {
+		fp.topLevelFuncs = append(fp.topLevelFuncs, n)
+	}
+
 	if sc := NewStructConstructor(n); sc != nil {
 		sh := fp.getOrCreate(sc.StructReturn.Name)
 		sh.Constructors = append(sh.Constructors, sc.Constructor)
@@ -51,6 +61,43 @@ func (fp *FileProcessor) AddFuncDecl(n *ast.FuncDecl) {
 func (fp *FileProcessor) AddTypeSpec(n *ast.TypeSpec) {
 	sh := fp.getOrCreate(n.Name.Name)
 	sh.Struct = n
+}
+
+// analyzeFunctions reports every unexported top-level function that appears
+// before the last exported top-level function in source order.
+// The `init` function is excluded from this check.
+func (fp *FileProcessor) analyzeFunctions(pass *analysis.Pass) {
+	var lastExported *ast.FuncDecl
+
+	for _, fn := range fp.topLevelFuncs {
+		if fn.Name.Name == "init" {
+			continue
+		}
+
+		if !fn.Name.IsExported() {
+			continue
+		}
+
+		if lastExported == nil || fn.Pos() > lastExported.Pos() {
+			lastExported = fn
+		}
+	}
+
+	if lastExported == nil {
+		return
+	}
+
+	for _, fn := range fp.topLevelFuncs {
+		if fn.Name.Name == "init" {
+			continue
+		}
+
+		if fn.Name.IsExported() || fn.Pos() >= lastExported.Pos() {
+			continue
+		}
+
+		reportUnexportedFuncBeforeExportedFunc(pass, fn, lastExported)
+	}
 }
 
 func (fp *FileProcessor) getOrCreate(structName string) *StructHolder {
