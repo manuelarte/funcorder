@@ -70,9 +70,9 @@ func TestAnalyzer(t *testing.T) {
 			desc:     "function order check",
 			patterns: "function-order",
 			options: map[string]string{
-				ConstructorCheckName:       "false",
-				StructMethodCheckName:      "false",
-				PackageLevelOrderCheckName: "true",
+				ConstructorCheckName:  "false",
+				StructMethodCheckName: "false",
+				FunctionCheckName:     "true",
 			},
 		},
 	}

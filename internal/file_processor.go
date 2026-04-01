@@ -31,52 +31,13 @@ func (fp *FileProcessor) Analyze(pass *analysis.Pass) {
 	}
 
 	if fp.features.IsEnabled(FunctionCheck) {
-		fp.analyzeFunctionOrder(pass)
+		fp.analyzeFunctions(pass)
 	}
 }
 
 func (fp *FileProcessor) ResetStructs() {
 	fp.structs = make(map[string]*StructHolder)
 	fp.topLevelFuncs = nil
-}
-
-// analyzeFunctionOrder reports every unexported top-level function that appears
-// before the last exported top-level function in source order.
-// The init function is excluded from this check.
-func (fp *FileProcessor) analyzeFunctionOrder(pass *analysis.Pass) {
-	// Find the last exported function (highest position).
-	var lastExported *ast.FuncDecl
-
-	for _, fn := range fp.topLevelFuncs {
-		if fn.Name.Name == "init" {
-			continue
-		}
-
-		if !fn.Name.IsExported() {
-			continue
-		}
-
-		if lastExported == nil || fn.Pos() > lastExported.Pos() {
-			lastExported = fn
-		}
-	}
-
-	if lastExported == nil {
-		return
-	}
-
-	// Report every unexported function that appears before the last exported one.
-	for _, fn := range fp.topLevelFuncs {
-		if fn.Name.Name == "init" {
-			continue
-		}
-
-		if fn.Name.IsExported() || fn.Pos() >= lastExported.Pos() {
-			continue
-		}
-
-		reportUnexportedFuncBeforeExportedFunc(pass, fn, lastExported)
-	}
 }
 
 func (fp *FileProcessor) AddFuncDecl(n *ast.FuncDecl) {
@@ -101,6 +62,43 @@ func (fp *FileProcessor) AddFuncDecl(n *ast.FuncDecl) {
 func (fp *FileProcessor) AddTypeSpec(n *ast.TypeSpec) {
 	sh := fp.getOrCreate(n.Name.Name)
 	sh.Struct = n
+}
+
+// analyzeFunctions reports every unexported top-level function that appears
+// before the last exported top-level function in source order.
+// The `init` function is excluded from this check.
+func (fp *FileProcessor) analyzeFunctions(pass *analysis.Pass) {
+	var lastExported *ast.FuncDecl
+
+	for _, fn := range fp.topLevelFuncs {
+		if fn.Name.Name == "init" {
+			continue
+		}
+
+		if !fn.Name.IsExported() {
+			continue
+		}
+
+		if lastExported == nil || fn.Pos() > lastExported.Pos() {
+			lastExported = fn
+		}
+	}
+
+	if lastExported == nil {
+		return
+	}
+
+	for _, fn := range fp.topLevelFuncs {
+		if fn.Name.Name == "init" {
+			continue
+		}
+
+		if fn.Name.IsExported() || fn.Pos() >= lastExported.Pos() {
+			continue
+		}
+
+		reportUnexportedFuncBeforeExportedFunc(pass, fn, lastExported)
+	}
 }
 
 func (fp *FileProcessor) getOrCreate(structName string) *StructHolder {

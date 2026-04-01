@@ -265,7 +265,8 @@ func (m MyStruct) hello() string {
 
 ### Check exported functions are placed before unexported functions
 
-This rule checks that exported functions (those with no receiver) are placed before unexported ones within each file. The `init` function is excluded from this rule.
+This rule checks that exported functions (those with no receiver) are placed before unexported ones within each file.
+The `init` function is excluded from this rule.
 
 <table>
 <thead><tr><th>❌ Bad</th><th>✅ Good</th></tr></thead>
@@ -302,8 +303,6 @@ func helper() string {
 
 </tbody>
 </table>
-
-> **Note:** When this change is merged upstream and consumed by golangci-lint, enable this rule by adding `function: true` under `linters.settings.funcorder` in your golangci-lint configuration.
 
 ## Resources
 
