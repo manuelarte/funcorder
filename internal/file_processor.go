@@ -41,7 +41,6 @@ func (fp *FileProcessor) ResetStructs() {
 }
 
 func (fp *FileProcessor) AddFuncDecl(n *ast.FuncDecl) {
-	// Accumulate all top-level functions (no receiver) for the package-level order check.
 	if fp.features.IsEnabled(FunctionCheck) && n.Recv == nil {
 		fp.topLevelFuncs = append(fp.topLevelFuncs, n)
 	}
