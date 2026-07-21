@@ -1,6 +1,6 @@
 # 🧐 FuncOrder
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/manuelarte/funcorder)](https://goreportcard.com/report/github.com/manuelarte/funcorder)
+[![Go](https://github.com/manuelarte/funcorder/actions/workflows/go.yml/badge.svg)](https://github.com/manuelarte/funcorder/actions/workflows/go.yml)
 ![version](https://img.shields.io/github/v/release/manuelarte/funcorder)
 
 - [🧐 FuncOrder](#-funcorder)
