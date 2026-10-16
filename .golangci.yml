@@ -87,7 +87,7 @@ linters:
     exhaustive:
       check:
         - switch
-        - map
+        - mapliteral
     exhaustruct:
       exclude:
         - ^os/exec.Cmd$
